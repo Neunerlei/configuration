@@ -25,6 +25,7 @@ namespace Neunerlei\Configuration\Util;
 
 use FilesystemIterator;
 use GlobIterator;
+use Iterator;
 use Neunerlei\Configuration\Exception\InvalidLocationException;
 
 trait LocationIteratorTrait
@@ -38,8 +39,12 @@ trait LocationIteratorTrait
      * @return \FilesystemIterator
      * @throws \Neunerlei\Configuration\Exception\InvalidLocationException
      */
-    protected function prepareLocationIterator($globPatternOrIterator): \Iterator
+    protected function prepareLocationIterator($globPatternOrIterator): Iterator
     {
+        if ($globPatternOrIterator instanceof AlphabeticalRecursiveFilesystemIterator) {
+            return $globPatternOrIterator;
+        }
+
         if ($globPatternOrIterator instanceof FilesystemIterator) {
             return new AlphabeticalRecursiveFilesystemIterator($globPatternOrIterator);
         }

@@ -23,7 +23,6 @@ declare(strict_types=1);
 namespace Neunerlei\Configuration\Finder;
 
 
-use AppendIterator;
 use Iterator;
 use Laminas\File\ClassFileLocator;
 use Neunerlei\Configuration\Event\ConfigHandlerFilterEvent;
@@ -32,6 +31,8 @@ use Neunerlei\Configuration\Handler\ConfigHandlerInterface;
 use Neunerlei\Configuration\Handler\HandlerConfigurator;
 use Neunerlei\Configuration\Handler\HandlerDefinition;
 use Neunerlei\Configuration\Loader\LoaderContext;
+use Neunerlei\Configuration\Util\AlphabeticalRecursiveFilesystemIterator;
+use Neunerlei\Configuration\Util\FilesystemAppendIterator;
 use Neunerlei\Configuration\Util\IntuitiveTopSorter;
 use Neunerlei\Configuration\Util\LocationIteratorTrait;
 use Neunerlei\PathUtil\Path;
@@ -39,7 +40,7 @@ use Neunerlei\PathUtil\Path;
 class HandlerFinder implements HandlerFinderInterface
 {
     use LocationIteratorTrait;
-    
+
     /**
      * @inheritDoc
      */
@@ -47,22 +48,22 @@ class HandlerFinder implements HandlerFinderInterface
     {
         // Find the definitions
         $definitions = $this->findDefinitions($loaderContext);
-        
+
         // Apply handler overrides
         $definitions = $this->applyHandlerOverrides($definitions);
-        
+
         // Order the handlers by their dependencies
         $definitions = $this->sortDefinitions($definitions);
-        
+
         // Allow filtering
         $loaderContext->dispatchEvent(($e = new ConfigHandlerFilterEvent(
             $loaderContext, $definitions
         )));
         $definitions = $e->getHandlers();
-        
+
         return $definitions;
     }
-    
+
     /**
      * Finds the list of all definitions based on the given handler instances and the classes
      * found in the given handler locations
@@ -75,7 +76,7 @@ class HandlerFinder implements HandlerFinderInterface
     {
         /** @var \Neunerlei\Configuration\Handler\HandlerDefinition[] $definitions */
         $definitions = [];
-        
+
         // Helper to generate the handler config object
         $makeNewDefinition = static function (
             string $handlerClass,
@@ -84,34 +85,33 @@ class HandlerFinder implements HandlerFinderInterface
             $definition            = new HandlerDefinition();
             $definition->className = $handlerClass;
             $definition->handler   = $handler;
-            $configurator          = new HandlerConfigurator($definition);
-            $handler->configure($configurator);
-            
+            $handler->configure(new HandlerConfigurator($definition));
+
             return $definition;
         };
-        
+
         // Load static handlers
         foreach ($loaderContext->handlers as $handler) {
             $handlerClass               = get_class($handler);
             $definitions[$handlerClass] = $makeNewDefinition($handlerClass, $handler);
         }
-        
+
         // Load handlers based on registered root paths
         foreach ($this->findHandlerClasses($loaderContext) as $handlerClass) {
             // Ignore existing handlers
             if (isset($definitions[$handlerClass])) {
                 continue;
             }
-            
+
             // Create the handler instance
             /** @var ConfigHandlerInterface $handler */
             $handler                    = $loaderContext->getInstance($handlerClass);
             $definitions[$handlerClass] = $makeNewDefinition($handlerClass, $handler);
         }
-        
+
         return $definitions;
     }
-    
+
     /**
      * Returns the list of all handler classes that have been found
      * in the registered handler locations
@@ -123,41 +123,28 @@ class HandlerFinder implements HandlerFinderInterface
     protected function findHandlerClasses(LoaderContext $loaderContext): array
     {
         // Find the list of handler classes in our registered handler locations
-        $handlers           = [];
-        $scannedDirectories = [];
-        foreach ($this->prepareHandlerLocations($loaderContext) as $location) {
-            /** @var \SplFileInfo $location */
-            
-            // Extract the directory from files and avoid duplicate scans
-            $directory = $location->isDir() ? $location->getPathname() : $location->getPath();
-            if (in_array($directory, $scannedDirectories, true)) {
-                continue;
-            }
-            $scannedDirectories[] = $directory;
-            
-            // Scan for classes
-            foreach (new ClassFileLocator($directory) as $class) {
-                /** @var \Laminas\File\PhpClassFile $class */
-                $handlers[] = array_filter($class->getClasses(), static function (string $className): bool {
-                    // Check if the class can be loaded
-                    if (! class_exists($className)) {
-                        // Ignore interfaces and traits
-                        if (interface_exists($className) || trait_exists($className)) {
-                            return false;
-                        }
-                        
-                        throw new HandlerClassNotAutoloadableException(
-                            'The handler class "' . $className . '" is auto-loadable!');
+        $handlers = [];
+        foreach (new ClassFileLocator($this->prepareHandlerLocations($loaderContext)) as $class) {
+            /** @var \Laminas\File\PhpClassFile $class */
+            $handlers[] = array_filter($class->getClasses(), static function (string $className): bool {
+                // Check if the class can be loaded
+                if (! class_exists($className)) {
+                    // Ignore interfaces and traits
+                    if (interface_exists($className) || trait_exists($className)) {
+                        return false;
                     }
-                    
-                    return in_array(ConfigHandlerInterface::class, class_implements($className), true);
-                });
-            }
+
+                    throw new HandlerClassNotAutoloadableException(
+                        'The handler class "' . $className . '" is auto-loadable!');
+                }
+
+                return in_array(ConfigHandlerInterface::class, class_implements($className), true);
+            });
         }
-        
+
         return array_merge([], ...$handlers);
     }
-    
+
     /**
      * Collects the list of all locations where we should search for handler classes
      *
@@ -167,14 +154,15 @@ class HandlerFinder implements HandlerFinderInterface
      */
     protected function prepareHandlerLocations(LoaderContext $loaderContext): Iterator
     {
-        $preparedHandlerLocations = new AppendIterator();
+        $preparedHandlerLocations = new FilesystemAppendIterator();
         foreach ($loaderContext->handlerLocations as $location) {
             if (is_string($location)) {
                 // Append an absolute path
                 if (Path::isAbsolute($location)) {
                     $preparedHandlerLocations->append($this->prepareLocationIterator($location));
+                    continue;
                 }
-                
+
                 // Build the for a relative directory
                 foreach ($loaderContext->rootLocations as $rootLocation) {
                     $rootPath = $rootLocation->getPathname();
@@ -186,10 +174,10 @@ class HandlerFinder implements HandlerFinderInterface
                 $preparedHandlerLocations->append($this->prepareLocationIterator($location));
             }
         }
-        
-        return $preparedHandlerLocations;
+
+        return new AlphabeticalRecursiveFilesystemIterator($preparedHandlerLocations);
     }
-    
+
     /**
      * Applies the registered handler overrides and makes sure
      * that the dependency lists are correctly rewritten based on the overrides
@@ -203,7 +191,7 @@ class HandlerFinder implements HandlerFinderInterface
         // Sort the list of handlers based on their overrides as "dependencies"
         // To make sure even overrides can be overridden again
         $knownClasses = array_keys($definitions);
-        
+
         // Remove all classes that override something that does not exist
         $definitionsToRemove = [];
         $sorter              = new IntuitiveTopSorter($knownClasses);
@@ -212,14 +200,14 @@ class HandlerFinder implements HandlerFinderInterface
             if (empty($definition->overrides)) {
                 continue;
             }
-            
+
             // Remove all dependencies that are not in the list of known classes
             $dependencies = array_filter(
                 $definition->overrides,
                 static function (string $classname) use ($knownClasses) {
                     return in_array($classname, $knownClasses, true);
                 });
-            
+
             // Check if we still can override something
             if (! empty($dependencies)) {
                 foreach ($dependencies as $dependency) {
@@ -227,11 +215,11 @@ class HandlerFinder implements HandlerFinderInterface
                 }
                 continue;
             }
-            
+
             // Mark this definition as to be removed
             $definitionsToRemove[] = $classname;
         }
-        
+
         // Sort and filter the definitions
         $definitionsSortedAndFiltered = [];
         foreach ($sorter->sort() as $sortedClass) {
@@ -243,28 +231,28 @@ class HandlerFinder implements HandlerFinderInterface
         }
         $definitions = $definitionsSortedAndFiltered;
         unset($definitionsSortedAndFiltered);
-        
+
         // Rewrite the handler list based on the given overrides
         $aliasMap = [];
         foreach ($definitions as $handlerKey => $definition) {
             if (empty($definition->overrides)) {
                 continue;
             }
-            
+
             // Merge all overridden configuration properties into the current config object
             foreach ($definition->overrides as $overrideTargetKey) {
                 $oDef = $definitions[$overrideTargetKey];
                 unset($definitions[$overrideTargetKey]);
-                
+
                 // Merge values
                 $definition->allowOverride = $oDef->allowOverride === false ? false : $definition->allowOverride;
                 foreach (['interfaces', 'locations', 'overrideLocations', 'overrides', 'before', 'after'] as $key) {
                     $definition->$key = array_unique(array_merge($oDef->$key, $definition->$key));
                 };
-                
+
                 // Create an alias
                 $aliasMap[$oDef->className] = $definition->className;
-                
+
                 // Rewrite potential old aliases
                 if (in_array($oDef->className, $aliasMap, true)) {
                     $aliasMap = array_map(static function ($className) use ($oDef, $definition): string {
@@ -273,7 +261,7 @@ class HandlerFinder implements HandlerFinderInterface
                 }
             }
         }
-        
+
         // Rewrite dependencies
         foreach ($definitions as $definition) {
             foreach (['before', 'after'] as $listName) {
@@ -286,10 +274,10 @@ class HandlerFinder implements HandlerFinderInterface
                 $definition->$listName = array_unique($definition->$listName);
             }
         }
-        
+
         return $definitions;
     }
-    
+
     /**
      * Uses the "before" and "after" properties to sort the handlers based on the given dependencies
      *
@@ -309,13 +297,13 @@ class HandlerFinder implements HandlerFinderInterface
                 $sorter->moveItemBefore($id, $otherId);
             }
         }
-        
+
         // Sort the list based on the dependencies
         $sortedDefinitions = [];
         foreach ($sorter->sort() as $id) {
             $sortedDefinitions[$id] = $definitions[$id];
         }
-        
+
         return $sortedDefinitions;
     }
 }

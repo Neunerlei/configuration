@@ -91,8 +91,8 @@ class HandlerFinderTest extends TestCase
             FixtureIteratorHandlerOverride::class,
             FixtureIteratorHandlerOverride2::class,
             FixtureRelativePathHandler1::class,
-            FixtureRelativePathHandler3::class,
             FixtureRelativePathHandler2::class,
+            FixtureRelativePathHandler3::class,
             FixtureRelativePathHandler4::class,
         ], $classes);
     }

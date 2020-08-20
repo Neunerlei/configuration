@@ -33,6 +33,11 @@ use SplFileInfo;
 class AlphabeticalRecursiveFilesystemIterator extends FilesystemIterator implements RecursiveIterator
 {
     /**
+     * @var Iterator
+     */
+    protected $wrappedIterator;
+
+    /**
      * The inner iterator instance if the path was an iterator, or null if the path was a string
      *
      * @var \Iterator
@@ -57,14 +62,10 @@ class AlphabeticalRecursiveFilesystemIterator extends FilesystemIterator impleme
         $flags = FilesystemIterator::KEY_AS_PATHNAME | FilesystemIterator::CURRENT_AS_FILEINFO
     ) {
         if ($path instanceof Iterator) {
-            if (! $path instanceof self && $path instanceof FilesystemIterator) {
-                $this->innerIterator = $this->makeInstanceOfMyself($path);
-            } else {
-                $this->innerIterator = $path;
-            }
+            $this->wrappedIterator = $path;
         } else {
             parent::__construct($path, $flags);
-            $this->innerIterator = $this->makeInstanceOfMyself(new FilesystemIterator($path));
+            $this->wrappedIterator = new FilesystemIterator($path, $flags);
         }
 
     }
@@ -74,16 +75,18 @@ class AlphabeticalRecursiveFilesystemIterator extends FilesystemIterator impleme
      */
     public function valid()
     {
-        return $this->innerIterator->valid() && $this->innerIterator->current() instanceof SplFileInfo;
-    }
+        $innerIterator = $this->getInnerIterator();
 
+        return $innerIterator->valid()
+               && $innerIterator->current() instanceof SplFileInfo;
+    }
 
     /**
      * @inheritDoc
      */
     public function rewind()
     {
-        $this->innerIterator->rewind();
+        $this->getInnerIterator()->rewind();
     }
 
     /**
@@ -91,7 +94,7 @@ class AlphabeticalRecursiveFilesystemIterator extends FilesystemIterator impleme
      */
     public function next()
     {
-        $this->innerIterator->next();
+        $this->getInnerIterator()->next();
     }
 
     /**
@@ -99,7 +102,7 @@ class AlphabeticalRecursiveFilesystemIterator extends FilesystemIterator impleme
      */
     public function key()
     {
-        return $this->innerIterator->key();
+        return $this->getInnerIterator()->key();
     }
 
     /**
@@ -107,7 +110,7 @@ class AlphabeticalRecursiveFilesystemIterator extends FilesystemIterator impleme
      */
     public function current()
     {
-        return $this->innerIterator->current();
+        return $this->getInnerIterator()->current();
     }
 
     /**
@@ -117,8 +120,8 @@ class AlphabeticalRecursiveFilesystemIterator extends FilesystemIterator impleme
     {
         parent::setInfoClass($class_name);
         $this->infoClass = $class_name;
-        if (method_exists($this->innerIterator, 'setInfoClass')) {
-            $this->innerIterator->setInfoClass($class_name);
+        if (method_exists($this->wrappedIterator, 'setInfoClass')) {
+            $this->wrappedIterator->setInfoClass($class_name);
         }
     }
 
@@ -135,26 +138,31 @@ class AlphabeticalRecursiveFilesystemIterator extends FilesystemIterator impleme
      */
     public function getChildren()
     {
-        $it = new FilesystemIterator($this->current()->getRealPath());
+        $it = new self($this->current()->getRealPath(), $this->getFlags());
         $it->setInfoClass($this->infoClass);
 
-        return $this->makeInstanceOfMyself($it);
+        return $it;
     }
 
     /**
-     * Creates a new wrapper iterator for the given iterator.
-     * The wrapper will contain all files ordered by their name inside a directory.
+     * Creates the inner iterator only when it is needed by the outer iterator.
+     * This allows the setInfoClass() to trigger before the wrapper instance is created
      *
-     * @param   \Iterator  $it
-     *
-     * @return $this
+     * @return \Iterator
      * @throws \Neunerlei\Arrays\ArrayException
      */
-    protected function makeInstanceOfMyself(Iterator $it): self
+    public function getInnerIterator(): Iterator
     {
-        // Sort both files and folders alphabetically
+        if (isset($this->innerIterator)) {
+            return $this->innerIterator;
+        }
+
+        if (! $this->wrappedIterator instanceof FilesystemIterator) {
+            return $this->innerIterator = $this->wrappedIterator;
+        }
+
         $files = $folders = [];
-        foreach ($it as $file) {
+        foreach ($this->wrappedIterator as $file) {
             if ($file->isDir()) {
                 $folders[$file->getPathname()] = $file;
             } else {
@@ -171,6 +179,6 @@ class AlphabeticalRecursiveFilesystemIterator extends FilesystemIterator impleme
         $children = new self(new ArrayIterator($contents));
         $children->setInfoClass($this->infoClass);
 
-        return $children;
+        return $this->innerIterator = $children;
     }
 }
