@@ -41,14 +41,14 @@ jobs:
 
             -
                 name: Run PHPunit
-                run: composer run test-cover-xml
+                run: composer run test-cover-clover
 
             -
                 name: Upload coverage to Codecov
                 uses: codecov/codecov-action@v1
                 with:
                     token: ${{ secrets.CODECOV_TOKEN }}
-                    file: ./Tests/Coverage/index.xml
+                    file: ./Tests/Coverage.xml
 
     documentation:
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
