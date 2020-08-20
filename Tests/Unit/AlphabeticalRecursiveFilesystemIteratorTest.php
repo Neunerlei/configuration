@@ -26,7 +26,9 @@ namespace Neunerlei\ConfigTests\Unit;
 use ArrayIterator;
 use FilesystemIterator;
 use Neunerlei\ConfigTests\LoaderTestTrait;
+use Neunerlei\ConfigTests\TestHelperTrait;
 use Neunerlei\Configuration\Util\AlphabeticalRecursiveFilesystemIterator;
+use Neunerlei\Configuration\Util\LocationIteratorTrait;
 use PHPUnit\Framework\TestCase;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -34,6 +36,7 @@ use SplFileInfo;
 class AlphabeticalRecursiveFilesystemIteratorTest extends TestCase
 {
     use LoaderTestTrait;
+    use TestHelperTrait;
 
     public function provideTestOrderingData(): array
     {
@@ -72,5 +75,13 @@ class AlphabeticalRecursiveFilesystemIteratorTest extends TestCase
         );
         $result   = iterator_to_array(new RecursiveIteratorIterator($iterator), true);
         self::assertEmpty($result);
+    }
+
+    public function testLoactionIteratorTraitInteraction()
+    {
+        $mock   = $this->getMockBuilder(LocationIteratorTrait::class)->getMockForTrait();
+        $it     = new AlphabeticalRecursiveFilesystemIterator(new ArrayIterator(['foo', 'bar']));
+        $caller = $this->makeCaller($mock, 'prepareLocationIterator');
+        self::assertSame($it, $caller($it));
     }
 }

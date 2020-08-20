@@ -1,7 +1,9 @@
 # Configuration - a different approach
 
 ![Create new Release](https://github.com/Neunerlei/configuration/workflows/Create%20new%20Release/badge.svg?event=push)
-
+[![codecov](https://codecov.io/gh/Neunerlei/configuration/branch/master/graph/badge.svg)](https://codecov.io/gh/Neunerlei/configuration)
+[![GitHub issues](https://img.shields.io/github/issues/Neunerlei/configuration)](https://github.com/Neunerlei/configuration/issues)
+[![GitHub license](https://img.shields.io/github/license/Neunerlei/configuration)](https://github.com/Neunerlei/configuration/blob/master/LICENSE.md)
 
 This package provides you a highly opinionated configuration / plugin loading framework for PHP. It provides
 built in auto-completion support for your IDE, is compatible with major PSR definitions (PSR-4, PSR-11, PSR-14 and PSR-16),
