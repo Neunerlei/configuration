@@ -17,7 +17,7 @@ jobs:
             matrix:
                 php-versions: [7.3, 7.4]
 
-        name: PHP ${{ matrix.php-versions }}
+        name: Test on PHP ${{ matrix.php-versions }}
         steps:
             -
                 uses: actions/checkout@v2
@@ -41,7 +41,14 @@ jobs:
 
             -
                 name: Run PHPunit
-                run: composer run test
+                run: composer run test-cover-xml
+
+            -
+                name: Upload coverage to Codecov
+                uses: codecov/codecov-action@v1
+                with:
+                    token: ${{ secrets.CODECOV_TOKEN }}
+                    file: ./Tests/Coverage/index.xml
 
     documentation:
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'

@@ -16,6 +16,7 @@
     },
     "scripts": {
         "test": "phpunit",
+        "test-cover-xml": "phpunit --coverage-xml Tests/Coverage",
         "test-cover": "phpunit --coverage-html Tests/Coverage"
     },
     "require": {
