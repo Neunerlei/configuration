@@ -1,0 +1,44 @@
+{
+    "name": "neunerlei/configuration",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "Martin Neundorfer",
+            "email": "code@neunerlei.eu",
+            "homepage": "https://www.neunerlei.eu",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/neunerlei/configuration/issues",
+        "source": "https://github.com/neunerlei/configuration",
+        "docs": "https://configuration.neunerlei.eu/"
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test-cover": "phpunit --coverage-html Tests/Coverage"
+    },
+    "require": {
+        "php": "^7.3",
+        "psr/simple-cache": "^1.0",
+        "psr/container": "^1.0",
+        "psr/event-dispatcher": "^1.0",
+        "laminas/laminas-file": "^2.8",
+        "marcj/topsort": "^1.1",
+        "neunerlei/path-util": "^2.4",
+        "neunerlei/arrays": "^1.2"
+    },
+    "require-dev": {
+        "roave/security-advisories": "dev-master",
+        "neunerlei/dbg": "^1.9",
+        "phpunit/phpunit": "^9.2.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Neunerlei\\Configuration\\": "Classes",
+            "Neunerlei\\ConfigExample\\": "Example",
+            "Neunerlei\\ConfigTests\\": "Tests"
+        }
+    },
+    "version": "1.0.0"
+}

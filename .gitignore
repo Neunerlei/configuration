@@ -1,0 +1,13 @@
+.settings/
+.DS_Store
+.env
+vendor
+docs/node_modules
+Tests/Coverage
+
+# IDEA Code Style
+.idea/*
+!.idea/copyright/
+!.idea/copyright/*
+!.idea/codeStyles/
+!.idea/codeStyles/*
