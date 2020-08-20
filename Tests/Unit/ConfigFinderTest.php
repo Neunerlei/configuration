@@ -48,7 +48,7 @@ class ConfigFinderTest extends TestCase
 {
     use TestHelperTrait;
     use LoaderTestTrait;
-    
+
     public function provideTestFindClassesData(): array
     {
         return [
@@ -60,10 +60,8 @@ class ConfigFinderTest extends TestCase
                     [
                         FixtureConfigFinderConfig1::class,
                         FixtureConfigFinderConfig2::class,
-                        // 6 before 3, because the sorting takes place alphabetically including the directory
-                        // So AltOverride comes earlier than the root directory
-                        FixtureConfigFinderConfig6::class,
                         FixtureConfigFinderConfig3::class,
+                        FixtureConfigFinderConfig6::class,
                         FixtureConfigFinderConfig4::class,
                         FixtureConfigFinderConfig5::class,
                     ],
@@ -114,7 +112,7 @@ class ConfigFinderTest extends TestCase
                     ],
                 ],
             ],
-            
+
             // No Overrides at all
             [
                 function (HandlerConfigurator $configurator) {
@@ -127,10 +125,8 @@ class ConfigFinderTest extends TestCase
                         FixtureConfigFinderConfig2::class,
                         // 4 before 3 because 2 and 4 come from Item2 while 3 comes from Item3, so this is fine
                         FixtureConfigFinderConfig4::class,
-                        // 6 before 3, because the sorting takes place alphabetically including the directory
-                        // So AltOverride comes earlier than the root directory
-                        FixtureConfigFinderConfig6::class,
                         FixtureConfigFinderConfig3::class,
+                        FixtureConfigFinderConfig6::class,
                         FixtureConfigFinderConfig5::class,
                     ],
                     // Override classes
@@ -149,7 +145,7 @@ class ConfigFinderTest extends TestCase
             ],
         ];
     }
-    
+
     /**
      * @param   callable|null  $handlerConfig
      * @param   array          $expectedResult
@@ -163,10 +159,9 @@ class ConfigFinderTest extends TestCase
         $definition = $this->getHandlerDefinition($loader);
         $finder     = new ConfigFinder();
         $caller     = $this->makeCaller($finder, 'findClasses');
-        
-        $this->assertEquals($expectedResult, $caller($definition, $context->configContext));
+        self::assertEquals($expectedResult, $caller($definition, $context->configContext));
     }
-    
+
     public function testClassNamespaceGeneration()
     {
         $loader = $this->makeTestLoader();
@@ -175,7 +170,7 @@ class ConfigFinderTest extends TestCase
         $definition = $this->getHandlerDefinition($loader);
         $finder     = new ConfigFinder();
         $caller     = $this->makeCaller($finder, 'findClasses');
-        
+
         $fixturePath = $this->getFixturePath(__CLASS__);
         $loader->registerRootLocation($fixturePath . 'ClassNamespaceItems/*',
             function ($location, $className, $classFile) use ($fixturePath): string {
@@ -193,7 +188,7 @@ class ConfigFinderTest extends TestCase
                     $this->assertEquals(
                         $fixturePath . 'ClassNamespaceItems/Item1/Config/FixtureConfigFinderNsConfig1.php',
                         $classFile->getPathname());
-                    
+
                     return 'fixture1';
                 }
                 if ($className === FixtureConfigFinderNsConfig2::class) {
@@ -201,7 +196,7 @@ class ConfigFinderTest extends TestCase
                     $this->assertEquals(
                         $fixturePath . 'ClassNamespaceItems/Item1/Config/FixtureConfigFinderNsConfig2.php',
                         $classFile->getPathname());
-                    
+
                     return 'fixture2';
                 }
                 if ($className === FixtureConfigFinderNsConfig3::class) {
@@ -209,7 +204,7 @@ class ConfigFinderTest extends TestCase
                     $this->assertEquals(
                         $fixturePath . 'ClassNamespaceItems/Item2/Config/FixtureConfigFinderNsConfig3.php',
                         $classFile->getPathname());
-                    
+
                     return 'fixture3';
                 }
                 if ($className === FixtureConfigFinderNsConfig4::class) {
@@ -217,15 +212,15 @@ class ConfigFinderTest extends TestCase
                     $this->assertEquals(
                         $fixturePath . 'ClassNamespaceItems/Item2/Config/FixtureConfigFinderNsConfig4.php',
                         $classFile->getPathname());
-                    
+
                     return 'fixture4';
                 }
                 $this->fail('Invalid class name has been passed to root location');
-                
+
                 return '';
             });
-        
-        $this->assertEquals(
+
+        self::assertEquals(
             [
                 [
                     FixtureConfigFinderNsConfig1::class,
@@ -243,7 +238,7 @@ class ConfigFinderTest extends TestCase
             ],
             $caller($definition, $context->configContext));
     }
-    
+
     public function testFailOnUnloadableClass()
     {
         $this->expectException(ConfigClassNotAutoloadableException::class);
@@ -256,19 +251,17 @@ class ConfigFinderTest extends TestCase
         $caller     = $this->makeCaller($finder, 'findClasses');
         $caller($definition, $context->configContext);
     }
-    
+
     public function testFind(): void
     {
-        $loader     = $this->makeTestLoader();
-        $context    = $this->getLoaderContext($loader);
-        $definition = $this->getHandlerDefinition($loader);
-        $finder     = new ConfigFinder();
-        
-        $configDefinition = $finder->find($definition, $context->configContext);
-        $this->assertInstanceOf(FixtureTestHandler::class,
+        $loader           = $this->makeTestLoader();
+        $context          = $this->getLoaderContext($loader);
+        $definition       = $this->getHandlerDefinition($loader);
+        $configDefinition = (new ConfigFinder())->find($definition, $context->configContext);
+        self::assertInstanceOf(FixtureTestHandler::class,
             $this->getValue($configDefinition, 'handlerDefinition')->handler);
     }
-    
+
     /**
      * Helper to create a test specific loader instance
      *

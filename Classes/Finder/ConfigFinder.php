@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace Neunerlei\Configuration\Finder;
 
 
+use FilesystemIterator;
 use Laminas\File\ClassFileLocator;
 use Neunerlei\Configuration\Event\ConfigDefinitionFilterEvent;
 use Neunerlei\Configuration\Exception\ConfigClassNotAutoloadableException;
@@ -107,34 +108,26 @@ class ConfigFinder implements ConfigFinderInterface
                 }
             };
             // Iterate the root locations
-            $scannedDirectories = [];
             foreach ($configContext->getLoaderContext()->rootLocations as $rootLocation) {
                 /** @var \Neunerlei\Configuration\Loader\NamespaceAwareSplFileInfo $rootLocation */
 
                 // Load the list of classes at the location
                 $rootPath = $rootLocation->getPathname();
                 $path     = Path::join($rootPath, $location);
-                foreach ($this->prepareLocationIterator($path) as $preparedLocation) {
-                    $classes = $this->getClassesInLocation(
-                        $rootLocation,
-                        $preparedLocation,
-                        $scannedDirectories,
-                        $classNamespaceMap,
-                        $classes);
-                }
+                $classes  = $this->getClassesInLocation(
+                    $rootLocation,
+                    $this->prepareLocationIterator($path),
+                    $classNamespaceMap,
+                    $classes);
 
                 // Check if we have to find overrides
                 if ($overrides !== false) {
                     foreach ($overrides as $override) {
-                        $overridePath = Path::join($path, $override);
-                        foreach ($this->prepareLocationIterator($overridePath) as $preparedLocation) {
-                            $overrideClasses = $this->getClassesInLocation(
-                                $rootLocation,
-                                $preparedLocation,
-                                $scannedDirectories,
-                                $classNamespaceMap,
-                                $overrideClasses);
-                        }
+                        $overrideClasses = $this->getClassesInLocation(
+                            $rootLocation,
+                            $this->prepareLocationIterator(Path::join($path, $override)),
+                            $classNamespaceMap,
+                            $overrideClasses);
                     }
                 }
             }
@@ -195,32 +188,27 @@ class ConfigFinder implements ConfigFinderInterface
      */
     protected function getClassesInLocation(
         NamespaceAwareSplFileInfo $rootLocation,
-        SplFileInfo $fileInfo,
-        array &$scannedDirectories,
+        FilesystemIterator $iterator,
         array &$classNamespaceMap,
         array $classes
     ): array {
-        $directory = $fileInfo->isDir() ? $fileInfo->getPathname() : $fileInfo->getPath();
-        if (! in_array($directory, $scannedDirectories, true)) {
-            $scannedDirectories[] = $directory;
-            foreach (new ClassFileLocator($directory) as $phpFile) {
-                /** @var \Laminas\File\PhpClassFile $phpFile */
-                $classes[] = $phpFile->getClasses();
+        foreach (new ClassFileLocator($iterator) as $phpFile) {
+            /** @var \Laminas\File\PhpClassFile $phpFile */
+            $classes[] = $phpFile->getClasses();
 
-                // Generate the namespace map
-                foreach ($phpFile->getClasses() as $class) {
-                    // Wrap the namespace generator in order to incorporate the root location
-                    $phpFileInfo               = new NamespaceAwareSplFileInfo($phpFile->getPathname(),
-                        function (SplFileInfo $fileInfo, string $className) use ($rootLocation): string {
-                            $namespaceOrGenerator = $rootLocation->getNamespaceOrGenerator();
-                            if (is_string($namespaceOrGenerator)) {
-                                return $namespaceOrGenerator;
-                            }
+            // Generate the namespace map
+            foreach ($phpFile->getClasses() as $class) {
+                // Wrap the namespace generator in order to incorporate the root location
+                $phpFileInfo               = new NamespaceAwareSplFileInfo($phpFile->getPathname(),
+                    static function (SplFileInfo $fileInfo, string $className) use ($rootLocation): string {
+                        $namespaceOrGenerator = $rootLocation->getNamespaceOrGenerator();
+                        if (is_string($namespaceOrGenerator)) {
+                            return $namespaceOrGenerator;
+                        }
 
-                            return ($namespaceOrGenerator)($rootLocation, $className, $fileInfo);
-                        });
-                    $classNamespaceMap[$class] = $phpFileInfo->getNamespace($class);
-                }
+                        return ($namespaceOrGenerator)($rootLocation, $className, $fileInfo);
+                    });
+                $classNamespaceMap[$class] = $phpFileInfo->getNamespace($class);
             }
         }
 

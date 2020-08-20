@@ -29,7 +29,7 @@ use Neunerlei\Configuration\Exception\InvalidLocationException;
 
 trait LocationIteratorTrait
 {
-    
+
     /**
      * Helper to initialize a glob pattern into a filesystem iterator if required
      *
@@ -38,16 +38,18 @@ trait LocationIteratorTrait
      * @return \FilesystemIterator
      * @throws \Neunerlei\Configuration\Exception\InvalidLocationException
      */
-    protected function prepareLocationIterator($globPatternOrIterator): FilesystemIterator
+    protected function prepareLocationIterator($globPatternOrIterator): \Iterator
     {
         if ($globPatternOrIterator instanceof FilesystemIterator) {
-            return $globPatternOrIterator;
+            return new AlphabeticalRecursiveFilesystemIterator($globPatternOrIterator);
         }
-        
+
         if (is_string($globPatternOrIterator)) {
-            return new GlobIterator(rtrim($globPatternOrIterator, '\\/'));
+            return new AlphabeticalRecursiveFilesystemIterator(
+                new GlobIterator(rtrim($globPatternOrIterator, '\\/'))
+            );
         }
-        
+
         throw new InvalidLocationException('The given location is invalid! Only strings or filesystem iterators are allowed!');
     }
 }

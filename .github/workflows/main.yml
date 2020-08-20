@@ -40,7 +40,7 @@ jobs:
                 run: composer install
 
             -
-                name: Run PHP lint
+                name: Run PHPunit
                 run: composer run test
 
     documentation:
