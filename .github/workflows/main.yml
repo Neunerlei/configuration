@@ -46,6 +46,8 @@ jobs:
             -
                 name: Upload coverage to Codecov
                 uses: codecov/codecov-action@v1
+                # PHPUnit Coverage is broken on PHP7.3
+                if: matrix.php-versions == '7.4'
                 with:
                     token: ${{ secrets.CODECOV_TOKEN }}
                     file: ./Tests/Coverage.xml
