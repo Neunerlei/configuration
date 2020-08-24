@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/Neunerlei/configuration/compare/v1.1.5...v1.2.0) (2020-08-24)
+
+
+### Features
+
+* **FilteredHandlerFinder:** only apply the filter to the list of classes, not to manually registered handlers ([614a76d](https://github.com/Neunerlei/configuration/commit/614a76d81ba9d3b5f9d4fc1a7de086bab8cd0ef5))
+
 ### [1.1.5](https://github.com/Neunerlei/configuration/compare/v1.1.4...v1.1.5) (2020-08-20)
 
 ### [1.1.4](https://github.com/Neunerlei/configuration/compare/v1.1.3...v1.1.4) (2020-08-20)
