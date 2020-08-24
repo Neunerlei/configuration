@@ -141,6 +141,7 @@ class HandlerFinderTest extends TestCase
         $handlers = $finder->find($context);
         self::assertEquals(
             [
+                FixtureStaticHandler::class,
                 ExampleRuntimeHandler::class,
             ], array_keys($handlers));
         self::assertContainsOnlyInstancesOf(HandlerDefinition::class, $handlers);

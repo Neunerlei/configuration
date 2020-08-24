@@ -23,7 +23,6 @@ declare(strict_types=1);
 namespace Neunerlei\Configuration\Finder;
 
 
-use Neunerlei\Configuration\Handler\HandlerDefinition;
 use Neunerlei\Configuration\Loader\LoaderContext;
 
 class FilteredHandlerFinder extends HandlerFinder
@@ -34,14 +33,14 @@ class FilteredHandlerFinder extends HandlerFinder
      * @var array
      */
     protected $ignoreWithInterface;
-    
+
     /**
      * The list of interfaces that is REQUIRED to be implemented by the found handlers
      *
      * @var array
      */
     protected $allowWithInterface;
-    
+
     /**
      * FilteredHandlerFinder constructor.
      *
@@ -53,29 +52,29 @@ class FilteredHandlerFinder extends HandlerFinder
         $this->ignoreWithInterface = $ignoreWithInterface;
         $this->allowWithInterface  = $allowWithInterface;
     }
-    
+
     /**
      * @inheritDoc
      */
-    protected function findDefinitions(LoaderContext $loaderContext): array
+    protected function findHandlerClasses(LoaderContext $loaderContext): array
     {
-        $definitions = parent::findDefinitions($loaderContext);
-        
-        return array_filter($definitions, function (HandlerDefinition $definition): bool {
-            $interfaces = class_implements($definition->className);
-            
+        $classes = parent::findHandlerClasses($loaderContext);
+
+        return array_filter($classes, function (string $className): bool {
+            $interfaces = class_implements($className);
+
             // Check if one of the interfaces is ignored
             if (! empty($this->ignoreWithInterface)
                 && count(array_intersect($this->ignoreWithInterface, $interfaces)) !== 0) {
                 return false;
             }
-            
+
             // Check if the class implements at least one of the required interfaces
             if (! empty($this->allowWithInterface)
                 && count(array_intersect($this->allowWithInterface, $interfaces)) === 0) {
                 return false;
             }
-            
+
             // This is allowed
             return true;
         });
