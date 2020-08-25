@@ -23,7 +23,7 @@ declare(strict_types=1);
 namespace Neunerlei\Configuration\State;
 
 
-use Closure;
+use Neunerlei\Arrays\Arrays;
 
 class ConfigState
 {
@@ -33,14 +33,14 @@ class ConfigState
      * @var array
      */
     protected $state = [];
-    
+
     /**
      * The currently set namespace
      *
      * @var string
      */
     protected $namespace;
-    
+
     /**
      * ConfigState constructor.
      *
@@ -50,7 +50,7 @@ class ConfigState
     {
         $this->state = $initialState;
     }
-    
+
     /**
      * Returns true if a given key exists, false if not.
      * Note: The method is namespace sensitive!
@@ -61,11 +61,9 @@ class ConfigState
      */
     public function has(string $key): bool
     {
-        $fallback = 'false-' . microtime(true);
-        
-        return $this->get($key, $fallback) !== $fallback;
+        return Arrays::hasPath($this->state, $this->getKeyPath($key));
     }
-    
+
     /**
      * Sets a value in the config state
      * Note: The method is namespace sensitive!
@@ -78,20 +76,11 @@ class ConfigState
      */
     public function set(string $key, $value): self
     {
-        $path = $this->getPathParts($key);
-        $temp =& $this->state;
-        
-        foreach ($path as $k) {
-            if (isset($temp[$k]) && ! is_array($temp[$k])) {
-                $temp[$k] = [];
-            }
-            $temp =& $temp[$k];
-        }
-        $temp = $value;
-        
+        $this->state = Arrays::setPath($this->state, $this->getKeyPath($key), $value);
+
         return $this;
     }
-    
+
     /**
      * Works similar to set() but accepts an array of $key => $value pairs to set multiple keys
      * at once.
@@ -105,10 +94,10 @@ class ConfigState
         foreach ($list as $k => $v) {
             $this->set($k, $v);
         }
-        
+
         return $this;
     }
-    
+
     /**
      * Returns the stored value for a given key, or returns the $fallback
      * if the key was not found. Note: The method is namespace sensitive!
@@ -120,19 +109,9 @@ class ConfigState
      */
     public function get(string $key, $fallback = null)
     {
-        $path = $this->getPathParts($key);
-        $temp =& $this->state;
-        
-        foreach ($path as $k) {
-            if (! isset($temp[$k])) {
-                return $fallback;
-            }
-            $temp =& $temp[$k];
-        }
-        
-        return $temp;
+        return Arrays::getPath($this->state, $this->getKeyPath($key), $fallback);
     }
-    
+
     /**
      * Allows you to perform multiple actions inside a given namespace.
      * This is useful if you want to write/read multiple entries that are stored in
@@ -152,17 +131,17 @@ class ConfigState
         // Update the namespace
         $namespaceBackup = $this->namespace;
         $this->namespace = $namespace;
-        
+
         // Call the callback and restore the handle after execution
         try {
             $callback($this);
         } finally {
             $this->namespace = $namespaceBackup;
         }
-        
+
         return $this;
     }
-    
+
     /**
      * Returns the whole state content as an array
      *
@@ -172,7 +151,7 @@ class ConfigState
     {
         return $this->state;
     }
-    
+
     /**
      * Merges the given $state object into the current state and returns a NEW instance
      * with the combined state of both objects. The merge is performed recursively on arrays.
@@ -181,29 +160,16 @@ class ConfigState
      * @param   \Neunerlei\Configuration\State\ConfigState  $state  The state to be merged into this state object
      *
      * @return \Neunerlei\Configuration\State\ConfigState
+     * @throws \Neunerlei\Arrays\ArrayException
      */
     public function mergeWith(ConfigState $state): ConfigState
     {
-        // Recursive array merger
-        $merger = static function (array $a, array $b, Closure $merger): array {
-            $c = $a;
-            foreach ($b as $k => $v) {
-                if (is_array($v) && isset($a[$k]) && is_array($a[$k])) {
-                    $v = $merger($a[$k], $v, $merger);
-                }
-                $c[$k] = $v;
-            }
-            
-            return $c;
-        };
-        
-        // Merge the states recursively into a single state
         $clone        = clone $this;
-        $clone->state = $merger($clone->getAll(), $state->getAll(), $merger);
-        
+        $clone->state = Arrays::merge($clone->getAll(), $state->getAll());
+
         return $clone;
     }
-    
+
     /**
      * Internal helper to split a key into a list of parts, including the currently set namespace
      *
@@ -211,8 +177,8 @@ class ConfigState
      *
      * @return array
      */
-    protected function getPathParts(string $key): array
+    protected function getKeyPath(string $key): array
     {
-        return array_filter(array_merge([], explode('.', (string)$this->namespace), explode('.', $key)));
+        return Arrays::mergePaths((string)$this->namespace, $key);
     }
 }
