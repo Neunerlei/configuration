@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.0](https://github.com/Neunerlei/configuration/compare/v1.3.0...v1.4.0) (2020-09-04)
+
+
+### Features
+
+* **ConfigState:** make ConfigState watchable ([7da6f1c](https://github.com/Neunerlei/configuration/commit/7da6f1c24eecb388d96753718594771c467c39d8))
+
 ## [1.3.0](https://github.com/Neunerlei/configuration/compare/v1.2.0...v1.3.0) (2020-08-25)
 
 
