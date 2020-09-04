@@ -35,7 +35,7 @@ class ConfigStateTest extends TestCase
             [['foo' => 'bar']],
         ];
     }
-    
+
     /**
      * @dataProvider provideTestInitialStateData
      *
@@ -44,24 +44,24 @@ class ConfigStateTest extends TestCase
     public function testInitialState(array $state): void
     {
         $i = new ConfigState($state);
-        $this->assertEquals($state, $i->getAll());
+        self::assertEquals($state, $i->getAll());
     }
-    
+
     public function testSet(): void
     {
         $i = new ConfigState([]);
-        $this->assertEquals([], $i->getAll());
-        
+        self::assertEquals([], $i->getAll());
+
         $i->set('foo', 'bar');
-        $this->assertEquals(['foo' => 'bar'], $i->getAll());
-        
+        self::assertEquals(['foo' => 'bar'], $i->getAll());
+
         $i->set('foo', 123);
-        $this->assertEquals(['foo' => 123], $i->getAll());
-        
+        self::assertEquals(['foo' => 123], $i->getAll());
+
         $i->set('foo.bar', 123);
-        $this->assertEquals(['foo' => ['bar' => 123]], $i->getAll());
+        self::assertEquals(['foo' => ['bar' => 123]], $i->getAll());
     }
-    
+
     public function testSetMultiple(): void
     {
         $i = new ConfigState([]);
@@ -73,7 +73,7 @@ class ConfigStateTest extends TestCase
                 'bar' => 234,
             ],
         ]);
-        $this->assertEquals([
+        self::assertEquals([
             'foo' => 'bar',
             'bar' => 'baz',
             'baz' => [
@@ -82,100 +82,100 @@ class ConfigStateTest extends TestCase
             ],
         ], $i->getAll());
     }
-    
+
     public function testGet(): void
     {
         $i = new ConfigState(['foo' => true, 'bar' => false, 'baz' => 123, 'faz' => ['foo' => 'asdf']]);
-        $this->assertTrue($i->get('foo'));
-        $this->assertFalse($i->get('bar'));
-        $this->assertEquals(123, $i->get('baz'));
-        $this->assertEquals(['foo' => 'asdf'], $i->get('faz'));
-        $this->assertEquals('asdf', $i->get('faz.foo'));
-        $this->assertNull($i->get('notExistent'));
-        $this->assertNull($i->get('notExistent.too'));
-        $this->assertTrue($i->get('notExistent', true));
-        $this->assertTrue($i->get('foo', false));
+        self::assertTrue($i->get('foo'));
+        self::assertFalse($i->get('bar'));
+        self::assertEquals(123, $i->get('baz'));
+        self::assertEquals(['foo' => 'asdf'], $i->get('faz'));
+        self::assertEquals('asdf', $i->get('faz.foo'));
+        self::assertNull($i->get('notExistent'));
+        self::assertNull($i->get('notExistent.too'));
+        self::assertTrue($i->get('notExistent', true));
+        self::assertTrue($i->get('foo', false));
     }
-    
+
     public function testHas(): void
     {
         $i = new ConfigState([]);
-        $this->assertFalse($i->has('foo'));
-        $this->assertFalse($i->has('bar'));
+        self::assertFalse($i->has('foo'));
+        self::assertFalse($i->has('bar'));
         $i->set('foo', 123);
-        $this->assertTrue($i->has('foo'));
-        $this->assertFalse($i->has('bar'));
+        self::assertTrue($i->has('foo'));
+        self::assertFalse($i->has('bar'));
         $i->set('bar.baz.foo', 123);
-        $this->assertTrue($i->has('bar'));
-        $this->assertTrue($i->has('bar.baz'));
-        $this->assertTrue($i->has('bar.baz.foo'));
+        self::assertTrue($i->has('bar'));
+        self::assertTrue($i->has('bar.baz'));
+        self::assertTrue($i->has('bar.baz.foo'));
     }
-    
+
     public function testUseNamespace()
     {
         $i = new ConfigState([]);
-        
+
         // Simple namespace
         $i->useNamespace('foo', function (ConfigState $i) {
-            $this->assertInstanceOf(ConfigState::class, $i);
+            self::assertInstanceOf(ConfigState::class, $i);
             $i->set('foo', 123);
             $i->set('bar', true);
-            $this->assertTrue($i->get('bar'));
-            $this->assertTrue($i->has('foo'));
-            $this->assertEquals(['foo' => ['foo' => 123, 'bar' => true]], $i->getAll());
+            self::assertTrue($i->get('bar'));
+            self::assertTrue($i->has('foo'));
+            self::assertEquals(['foo' => ['foo' => 123, 'bar' => true]], $i->getAll());
         });
-        $this->assertEquals(['foo' => ['foo' => 123, 'bar' => true]], $i->getAll());
-        
+        self::assertEquals(['foo' => ['foo' => 123, 'bar' => true]], $i->getAll());
+
         // Nested namespace
         $i->useNamespace('foo', function () use ($i) {
             // We are back in the previous namespace
-            $this->assertTrue($i->get('bar'));
-            $this->assertTrue($i->has('foo'));
+            self::assertTrue($i->get('bar'));
+            self::assertTrue($i->has('foo'));
             $i->set('parent', true);
-            
+
             $i->useNamespace('baz', function () use ($i) {
                 // Values from the parent namespace
-                $this->assertNull($i->get('bar'));
-                $this->assertFalse($i->has('parent'));
-                $this->assertFalse($i->has('foo'));
-                
+                self::assertNull($i->get('bar'));
+                self::assertFalse($i->has('parent'));
+                self::assertFalse($i->has('foo'));
+
                 // Set some child values
                 $i->set('foo', 456);
                 $i->set('bar', 789);
-                
+
                 // Test a third nesting level with a multi-step namespace
                 $i->useNamespace('foo.sub.space', function () use ($i) {
                     $i->set('test', true);
                     $i->set('test2', 'asdf');
                 });
-                
+
                 // Now go back to the root namespace
                 $i->useNamespace(null, function () use ($i) {
                     // We should now have access to all values
                     // "foo" namespace
-                    $this->assertTrue($i->has('foo'));
-                    $this->assertTrue($i->get('foo.bar'));
-                    $this->assertEquals(123, $i->get('foo.foo'));
-                    
+                    self::assertTrue($i->has('foo'));
+                    self::assertTrue($i->get('foo.bar'));
+                    self::assertEquals(123, $i->get('foo.foo'));
+
                     // Nested sub space
-                    $this->assertTrue($i->has('foo.sub.space'));
-                    $this->assertTrue($i->get('foo.sub.space.test'));
-                    $this->assertEquals('asdf', $i->get('foo.sub.space.test2'));
-                    
+                    self::assertTrue($i->has('foo.sub.space'));
+                    self::assertTrue($i->get('foo.sub.space.test'));
+                    self::assertEquals('asdf', $i->get('foo.sub.space.test2'));
+
                     // "baz" namespace
-                    $this->assertTrue($i->has('baz'));
-                    $this->assertEquals(456, $i->get('baz.foo'));
-                    $this->assertEquals(789, $i->get('baz.bar'));
-                    
+                    self::assertTrue($i->has('baz'));
+                    self::assertEquals(456, $i->get('baz.foo'));
+                    self::assertEquals(789, $i->get('baz.bar'));
+
                 });
             });
-            
+
             // We should now be back in the parent namespace
-            $this->assertTrue($i->has('parent'));
+            self::assertTrue($i->has('parent'));
         });
-        
+
         // Now let's check our result
-        $this->assertEquals([
+        self::assertEquals([
             'foo' => [
                 'foo'    => 123,
                 'bar'    => true,
@@ -193,15 +193,15 @@ class ConfigStateTest extends TestCase
             ],
         ], $i->getAll());
     }
-    
+
     public function testMerge()
     {
         $a = new ConfigState(['foo' => 'bar', 'bar' => 'baz', 'baz' => ['subFoo' => ['subFoo2' => true]]]);
         $b = new ConfigState(['bar' => 123, 'baz' => ['subFoo' => ['subFoo1' => 'asdf']]]);
         $c = $a->mergeWith($b);
-        $this->assertNotSame($a, $c);
-        $this->assertNotSame($b, $c);
-        $this->assertEquals([
+        self::assertNotSame($a, $c);
+        self::assertNotSame($b, $c);
+        self::assertEquals([
             'foo' => 'bar',
             'bar' => 123,
             'baz' => [
@@ -211,5 +211,104 @@ class ConfigStateTest extends TestCase
                 ],
             ],
         ], $c->getAll());
+    }
+
+    public function testWatcherSimple()
+    {
+        $state = new ConfigState([]);
+        $i     = 0;
+        $state->addWatcher('test', function ($v) use (&$i) {
+            static::assertEquals('asdf', $v);
+            $i++;
+        });
+        $state->addWatcher('foo.bar', function ($v) use (&$i) {
+            static::assertEquals([123, 234], $v);
+            $i++;
+        });
+
+        $state->set('test', 'asdf');
+        $state->set('foo', ['baz' => 123]);
+        $state->set('foo.bar', [123, 234]);
+
+        static::assertEquals([
+            'test' => 'asdf',
+            'foo'  => [
+                'baz' => 123,
+                'bar' => [123, 234],
+            ],
+        ], $state->getAll());
+
+        static::assertEquals(2, $i);
+    }
+
+    public function testWatcherComplex(): void
+    {
+        $state = new ConfigState([]);
+        $i     = 0;
+
+        $state->addWatcher('test.bar.baz', function ($v) use (&$i) {
+            static::assertEquals(['foo' => 1], $v);
+            $i++;
+        });
+        $state->addWatcher('test', function ($v) use (&$i) {
+            static::assertEquals(['bar' => ['baz' => ['foo' => 1]]], $v);
+            $i++;
+        });
+        $state->addWatcher('foo.bar', function ($v) use (&$i) {
+            static::assertEquals(1, $v);
+            $i++;
+        });
+
+        $state->set('test.bar.baz.foo', 1);
+        $state->set('foo', ['bar' => 1]);
+
+        static::assertEquals(3, $i);
+    }
+
+    public function testWatcherRemoval(): void
+    {
+        $state = new ConfigState([]);
+        $i     = 0;
+
+        $state->addWatcher('test', $c = function () {
+            self::fail('Watcher was not removed correctly!');
+        });
+        $state->addWatcher('test', $c2 = function ($v) use (&$i) {
+            self::assertEquals(1, $v);
+            $i++;
+        });
+
+        $state->removeWatcher($c);
+
+        $state->set('test', 1);
+
+        static::assertEquals(1, $i);
+
+        $i = 0;
+        $state->removeWatcher($c2);
+        $state->set('test', 2);
+        static::assertEquals(0, $i);
+    }
+
+    public function testWatcherMerging(): void
+    {
+        $a = new ConfigState([]);
+        $b = new ConfigState([]);
+        $i = 0;
+
+        $a->addWatcher('foo', function ($v) use (&$i) {
+            self::assertEquals(1, $v);
+            $i++;
+        });
+        $b->addWatcher('foo', function ($v) use (&$i) {
+            self::assertEquals(1, $v);
+            $i++;
+        });
+
+        $c = $a->mergeWith($b);
+
+        $c->set('foo', 1);
+
+        static::assertEquals(2, $i);
     }
 }

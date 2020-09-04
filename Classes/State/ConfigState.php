@@ -42,6 +42,13 @@ class ConfigState
     protected $namespace;
 
     /**
+     * The list of registered watchers on this state object
+     *
+     * @var array
+     */
+    protected $watchers = [];
+
+    /**
      * ConfigState constructor.
      *
      * @param   array  $initialState
@@ -76,7 +83,9 @@ class ConfigState
      */
     public function set(string $key, $value): self
     {
-        $this->state = Arrays::setPath($this->state, $this->getKeyPath($key), $value);
+        $this->handleWatchers(function () use ($key, $value) {
+            $this->state = Arrays::setPath($this->state, $this->getKeyPath($key), $value);
+        });
 
         return $this;
     }
@@ -91,9 +100,11 @@ class ConfigState
      */
     public function setMultiple(array $list): self
     {
-        foreach ($list as $k => $v) {
-            $this->set($k, $v);
-        }
+        $this->handleWatchers(function () use ($list) {
+            foreach ($list as $k => $v) {
+                $this->state = Arrays::setPath($this->state, $this->getKeyPath($k), $v);
+            }
+        });
 
         return $this;
     }
@@ -164,10 +175,104 @@ class ConfigState
      */
     public function mergeWith(ConfigState $state): ConfigState
     {
-        $clone        = clone $this;
-        $clone->state = Arrays::merge($clone->getAll(), $state->getAll());
+        $clone           = clone $this;
+        $clone->state    = Arrays::merge($clone->getAll(), $state->getAll());
+        $clone->watchers = Arrays::merge($clone->watchers, $state->watchers);
 
         return $clone;
+    }
+
+    /**
+     * Adds a new watcher for a storage key. Watchers will be executed every time
+     * their respective key or one of their children gets updated using the set() methods.
+     *
+     * This means you can get notified if a configuration state changes.
+     * For example: You register a watcher on the key: "foo.bar"
+     *
+     * Now you set a value to $state->set('foo', ['test' => 123]);
+     * Your watcher will NOT be triggered in that case
+     * However, if you set another value to $state->set('foo', ['bar' => 123]);
+     * your watcher will be triggered, because foo.bar got updated.
+     * It will also work if you set $state->set('foo.bar', 123) directly.
+     *
+     * The watcher will also get notified if you set one of its children.
+     * This means if you set something like $state->set('foo.bar.baz', 123), the watcher will trigger,
+     * because it listens to deep changes.
+     *
+     * NOTE: Only simple paths are supported as watcher keys, meaning stuff like foo.bar[foo,bar] or foo.*.bar
+     * will NOT work!
+     *
+     * @param   string    $key      The selector of the property to watch
+     * @param   callable  $watcher  The callback to execute if the property changed
+     *
+     * @return $this
+     */
+    public function addWatcher(string $key, callable $watcher): self
+    {
+        $this->watchers[implode('.', $this->getKeyPath($key))][] = $watcher;
+
+        return $this;
+    }
+
+    /**
+     * Removes a previously registered watcher from the list.
+     *
+     * @param   callable  $watcher  The callback to remove from the list of watchers
+     *
+     * @return $this
+     */
+    public function removeWatcher(callable $watcher): self
+    {
+        foreach ($this->watchers as $key => $watcherList) {
+            $this->watchers[$key] = array_filter($watcherList, static function ($w) use ($watcher) {
+                return $watcher !== $w;
+            });
+            if (empty($this->watchers[$key])) {
+                unset($this->watchers[$key]);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Internal helper to keep track of the changed properties and notify their respective watchers
+     *
+     * @param   callable  $callback  The setter actions that should be watched while being executed
+     */
+    protected function handleWatchers(callable $callback): void
+    {
+        // Fastlane if we don't have watchers
+        if (empty($this->watchers)) {
+            $callback();
+        }
+
+        // Collect the list of watchers and notify them
+        $pathClassBackup = Arrays::$pathClass;
+        try {
+            WatchableArrayPaths::$keysToTrigger = [];
+            Arrays::$pathClass                  = WatchableArrayPaths::class;
+
+            $callback();
+
+            $keysToTrigger                      = array_keys(WatchableArrayPaths::$keysToTrigger);
+            Arrays::$pathClass                  = $pathClassBackup;
+            WatchableArrayPaths::$keysToTrigger = [];
+
+            foreach ($keysToTrigger as $key) {
+                if (empty($this->watchers[$key])) {
+                    continue;
+                }
+                $value = Arrays::getPath($this->state, $key);
+                foreach ($this->watchers[$key] as $watcher) {
+                    $watcher($value);
+                }
+            }
+
+        } finally {
+            Arrays::$pathClass                  = $pathClassBackup;
+            WatchableArrayPaths::$keysToTrigger = [];
+        }
     }
 
     /**
