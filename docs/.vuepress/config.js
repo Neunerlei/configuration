@@ -21,7 +21,8 @@ module.exports = {
     themeConfig: {
         sidebar: [
             '/',
-            '/guide/GettingStarted'
+            '/guide/GettingStarted',
+            '/guide/ConfigState'
         ]
     }
 };

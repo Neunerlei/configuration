@@ -452,6 +452,7 @@ after you let your code run again.
 Pretty neat, but a lot of code to write a single entry in an array. So, why would I ever do it like this?
 I'm glad you asked, so with the basic principles out of the way, take a look at some nifty stuff like:
 
+- [Config State](/guide/ConfigState.md)
 - Inheritance and overrides
 - Handler overrides and config extension
 - Config modifiers
