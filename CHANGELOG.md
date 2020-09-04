@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/Neunerlei/configuration/compare/v1.2.0...v1.3.0) (2020-08-25)
+
+
+### Features
+
+* **ConfigState:** use Neunerlei/Arrays package for getter and setter operations ([5aa70c3](https://github.com/Neunerlei/configuration/commit/5aa70c3643698f93450980a0fda26b5c27efa030))
+
 ## [1.2.0](https://github.com/Neunerlei/configuration/compare/v1.1.5...v1.2.0) (2020-08-24)
 
 
