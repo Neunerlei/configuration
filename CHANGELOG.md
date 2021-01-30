@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.0](https://github.com/Neunerlei/configuration/compare/v1.4.0...v1.5.0) (2021-01-30)
+
+
+### Features
+
+* **AbstractConfigDefinition:** add public getter methods for properties ([7be3a81](https://github.com/Neunerlei/configuration/commit/7be3a81c1bd2c8c85d78295252a588031073fd44))
+* **AbstractConfigHandler:** implement setDefinition() ([7dc51c9](https://github.com/Neunerlei/configuration/commit/7dc51c963e116d13685cfdda05673bcbf6a81acd))
+
+
+### Bug Fixes
+
+* **ConfigDefinitionFilterEvent:** fix type annotation ([dbf9d80](https://github.com/Neunerlei/configuration/commit/dbf9d8056c4f9bbc9f6f9a194437417ec5f73aba))
+
 ## [1.4.0](https://github.com/Neunerlei/configuration/compare/v1.3.0...v1.4.0) (2020-09-04)
 
 
