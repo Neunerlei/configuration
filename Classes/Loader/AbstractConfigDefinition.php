@@ -33,21 +33,21 @@ abstract class AbstractConfigDefinition
      * @var HandlerDefinition
      */
     protected $handlerDefinition;
-    
+
     /**
      * The context object the config is generated for
      *
      * @var \Neunerlei\Configuration\Loader\ConfigContext
      */
     protected $configContext;
-    
+
     /**
      * The list of config classes we should dispatch the handler for
      *
      * @var array
      */
     protected $configClasses;
-    
+
     /**
      * The list of classes that have been registered as "override".
      * Those classes have already been merged into $configClasses!
@@ -56,14 +56,14 @@ abstract class AbstractConfigDefinition
      * @var array
      */
     protected $overrideConfigClasses;
-    
+
     /**
      * The list of config classes and their matching namespaces
      *
      * @var array
      */
     protected $classNamespaceMap;
-    
+
     /**
      * AbstractConfigStack constructor.
      *
@@ -85,5 +85,57 @@ abstract class AbstractConfigDefinition
         $this->configClasses         = $configClasses;
         $this->classNamespaceMap     = $classNamespaceMap;
         $this->overrideConfigClasses = $overrideConfigClasses;
+    }
+
+    /**
+     * Returns the handler definition this config definition applies to
+     *
+     * @return \Neunerlei\Configuration\Handler\HandlerDefinition
+     */
+    public function getHandlerDefinition(): HandlerDefinition
+    {
+        return $this->handlerDefinition;
+    }
+
+    /**
+     * Returns the list of config classes we should dispatch the handler for
+     *
+     * @return array
+     */
+    public function getConfigClasses(): array
+    {
+        return $this->configClasses;
+    }
+
+    /**
+     * Returns the list of classes that have been registered as "override".
+     *
+     * @return array
+     */
+    public function getOverrideConfigClasses(): array
+    {
+        return $this->overrideConfigClasses;
+    }
+
+    /**
+     * Returns true if the given class was registered as "override", false if not.
+     *
+     * @param   string  $className  The name of the class to check for
+     *
+     * @return bool
+     */
+    public function isOverride(string $className): bool
+    {
+        return in_array($className, $this->overrideConfigClasses, true);
+    }
+
+    /**
+     * Returns the list of config classes and their matching namespaces
+     *
+     * @return array
+     */
+    public function getClassNamespaceMap(): array
+    {
+        return $this->classNamespaceMap;
     }
 }
