@@ -36,6 +36,7 @@ use Neunerlei\Configuration\Util\FilesystemAppendIterator;
 use Neunerlei\Configuration\Util\IntuitiveTopSorter;
 use Neunerlei\Configuration\Util\LocationIteratorTrait;
 use Neunerlei\PathUtil\Path;
+use ReflectionClass;
 
 class HandlerFinder implements HandlerFinderInterface
 {
@@ -138,7 +139,17 @@ class HandlerFinder implements HandlerFinderInterface
                         'The handler class "' . $className . '" is auto-loadable!');
                 }
 
-                return in_array(ConfigHandlerInterface::class, class_implements($className), true);
+                // Check if class has the correct interface
+                if (! in_array(ConfigHandlerInterface::class, class_implements($className), true)) {
+                    return false;
+                }
+
+                // Check if the class is abstract
+                if ((new ReflectionClass($className))->isAbstract()) {
+                    return false;
+                }
+
+                return true;
             });
         }
 

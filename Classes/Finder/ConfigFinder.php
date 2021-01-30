@@ -34,6 +34,7 @@ use Neunerlei\Configuration\Loader\NamespaceAwareSplFileInfo;
 use Neunerlei\Configuration\Modifier\ModifierContext;
 use Neunerlei\Configuration\Util\LocationIteratorTrait;
 use Neunerlei\PathUtil\Path;
+use ReflectionClass;
 use SplFileInfo;
 
 class ConfigFinder implements ConfigFinderInterface
@@ -150,10 +151,20 @@ class ConfigFinder implements ConfigFinderInterface
                     'The configuration class "' . $className . '" is auto-loadable!');
             }
 
-            return ! empty(array_intersect(
+            // Check if class has the correct interface
+            if (empty(array_intersect(
                 class_implements($className),
                 $handlerDefinition->interfaces
-            ));
+            ))) {
+                return false;
+            }
+
+            // Check if the class is abstract
+            if ((new ReflectionClass($className))->isAbstract()) {
+                return false;
+            }
+
+            return true;
         };
 
         $classes         = array_filter($classes, $filter);
