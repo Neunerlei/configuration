@@ -30,17 +30,17 @@ use Neunerlei\Configuration\Util\ConfigDefinitionGetterSetterTrait;
 class ConfigDefinitionFilterEvent extends AbstractConfigDefinition
 {
     use ConfigDefinitionGetterSetterTrait;
-    
+
     /**
      * Updates the handler definition this definition does apply to
      *
-     * @param   \Neunerlei\Configuration\Handler\ConfigHandlerInterface  $definition
+     * @param   \Neunerlei\Configuration\Handler\HandlerDefinition  $definition
      */
     public function setHandlerDefinition(HandlerDefinition $definition): void
     {
         $this->handlerDefinition = $definition;
     }
-    
+
     /**
      * Updates the list of classes that have been registered as "override".
      * Those classes have already been merged into $configClasses!
@@ -51,6 +51,6 @@ class ConfigDefinitionFilterEvent extends AbstractConfigDefinition
     {
         $this->overrideConfigClasses = $overrideConfigClasses;
     }
-    
-    
+
+
 }
