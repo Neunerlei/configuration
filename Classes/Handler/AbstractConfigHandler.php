@@ -23,12 +23,30 @@ declare(strict_types=1);
 namespace Neunerlei\Configuration\Handler;
 
 
+use Neunerlei\Configuration\Loader\ConfigDefinition;
 use Neunerlei\Configuration\Util\ConfigContextAwareTrait;
 
 abstract class AbstractConfigHandler implements ConfigHandlerInterface
 {
     use ConfigContextAwareTrait;
-    
+
+    /**
+     * Contains the configuration definition for this handler
+     *
+     * @var ConfigDefinition
+     */
+    protected $definition;
+
+    /**
+     * Allows the config definition to inject itself into the handler
+     *
+     * @param   \Neunerlei\Configuration\Loader\ConfigDefinition  $definition
+     */
+    public function setDefinition(ConfigDefinition $definition): void
+    {
+        $this->definition = $definition;
+    }
+
     /**
      * Alias/Shortcut for $this->context->getLoaderContext()->getInstance($classname, $creationFallback)
      *

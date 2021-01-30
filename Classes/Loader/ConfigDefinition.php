@@ -35,6 +35,12 @@ class ConfigDefinition extends AbstractConfigDefinition
         // Initialize the handler
         $handler = $this->handlerDefinition->handler;
         $handler->setConfigContext($this->configContext);
+
+        // todo this should become a default action in the next major release
+        if (method_exists($handler, 'setDefinition')) {
+            $handler->setDefinition($this);
+        }
+
         if (! empty($this->handlerDefinition->defaultState)) {
             $this->configContext->getState()->setMultiple($this->handlerDefinition->defaultState);
         }

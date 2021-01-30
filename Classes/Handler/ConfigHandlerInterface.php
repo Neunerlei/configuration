@@ -23,6 +23,13 @@ namespace Neunerlei\Configuration\Handler;
 
 use Neunerlei\Configuration\Util\ConfigContextAwareInterface;
 
+/**
+ * Interface ConfigHandlerInterface
+ *
+ * @package Neunerlei\Configuration\Handler
+ *
+ * @todo    setDefinition() should become part of this contract in the next major release
+ */
 interface ConfigHandlerInterface extends ConfigContextAwareInterface
 {
     /**
@@ -46,6 +53,10 @@ interface ConfigHandlerInterface extends ConfigContextAwareInterface
      * Your handler has to do something with the class.
      *
      * @param   string  $class  The current configuration class to process
+     *
+     * @todo a second parameter $isOverride could be implemented in the next major release
+     *       to tell the handler if the given class is an override or not. This would resolve the
+     *       need to access the configDefinition?
      */
     public function handle(string $class): void;
 
