@@ -28,10 +28,6 @@ use Neunerlei\Arrays\Traits\PathTrait;
 
 class ArraysWatchable extends Arrays
 {
-    use PathTrait {
-        initWalkerStep as initWalkerStepRoot;
-        setPathWalker as setPathWalkerRoot;
-    }
 
     /**
      * Holds the list of all collected keys we should trigger our watcher for
@@ -52,7 +48,7 @@ class ArraysWatchable extends Arrays
      */
     protected static function initWalkerStep(array $input, array &$path): array
     {
-        $result = static::initWalkerStepRoot($input, $path);
+        $result = parent::initWalkerStep($input, $path);
         [$keys] = $result;
         static::$currentKey[] = reset($keys);
 
@@ -72,7 +68,7 @@ class ArraysWatchable extends Arrays
         // because we have to take their structure into account when generating the list
         // of keys to trigger
         if (empty(static::$currentKey) && is_array($value)) {
-            static::setPathWalkerRoot($list, $path, $value);
+            parent::setPathWalker($list, $path, $value);
 
             $rootKey = implode('.', static::$currentKey);
             foreach (array_keys(Arrays::flatten($value)) as $subKey) {
@@ -80,7 +76,7 @@ class ArraysWatchable extends Arrays
             }
         }
 
-        static::setPathWalkerRoot($list, $path, $value);
+        parent::setPathWalker($list, $path, $value);
     }
 
     /**

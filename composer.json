@@ -27,7 +27,7 @@
         "laminas/laminas-file": "^2.8",
         "marcj/topsort": "^2.0",
         "neunerlei/path-util": "^2.4",
-        "neunerlei/arrays": "^3.1"
+        "neunerlei/arrays": "^3.2.0"
     },
     "require-dev": {
         "roave/security-advisories": "dev-master",

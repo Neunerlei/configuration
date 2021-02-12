@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d8e0b69c65a6068a26168022ef685267",
+    "content-hash": "e0d8c231a58caeffe6791dc54908239d",
     "packages": [
         {
             "name": "laminas/laminas-file",
@@ -383,16 +383,16 @@
         },
         {
             "name": "neunerlei/arrays",
-            "version": "3.1.0",
+            "version": "3.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Neunerlei/arrays.git",
-                "reference": "ebc4b46dd34f58558a5fef823e4af6cb29e75a34"
+                "reference": "7c0e293ab304e461f188cf3cf0bc342455bb57e5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Neunerlei/arrays/zipball/ebc4b46dd34f58558a5fef823e4af6cb29e75a34",
-                "reference": "ebc4b46dd34f58558a5fef823e4af6cb29e75a34",
+                "url": "https://api.github.com/repos/Neunerlei/arrays/zipball/7c0e293ab304e461f188cf3cf0bc342455bb57e5",
+                "reference": "7c0e293ab304e461f188cf3cf0bc342455bb57e5",
                 "shasum": ""
             },
             "require": {
@@ -430,7 +430,7 @@
                 }
             ],
             "description": "A package that provides a multitude of tools to traverse, sort and modify arrays in your daily routine",
-            "time": "2021-02-12T13:48:07+00:00"
+            "time": "2021-02-12T14:56:36+00:00"
         },
         {
             "name": "neunerlei/path-util",
