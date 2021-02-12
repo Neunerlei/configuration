@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.5.1](https://github.com/Neunerlei/configuration/compare/v1.5.0...v1.5.1) (2021-01-30)
+
+
+### Bug Fixes
+
+* **Finder:** make sure abstract classes are ignored correctly ([6d4df51](https://github.com/Neunerlei/configuration/commit/6d4df51b0f54fffe230da5047f62bba9ee9354d2))
+
 ## [1.5.0](https://github.com/Neunerlei/configuration/compare/v1.4.0...v1.5.0) (2021-01-30)
 
 
