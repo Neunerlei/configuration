@@ -33,89 +33,88 @@ use ReflectionObject;
 class LoaderFunctionalTest extends TestCase
 {
     use LoaderTestTrait;
-    
+
     public function testUnCachedLoad()
     {
         $loader = $this->makeTestLoader();
         $state  = $loader->load();
-        
-        $this->assertEquals(
+
+        self::assertEquals(
             ['plugin1', 'contentElements', 'runtimeInstances'],
             array_keys($state->getAll())
         );
-        
+
         $this->applyPlugin1Assertion($state);
         $this->applyContentElementAssertion($state);
         $this->applyRuntimeInstancesAssertion($state);
     }
-    
+
     public function testNormalLoad()
     {
         $loader = $this->makeTestLoader();
         $cache  = new ExampleCacheImplementation(false);
         $loader->setCache($cache);
-        
+
         $state = $loader->load();
         $this->applyPlugin1Assertion($state);
         $this->applyContentElementAssertion($state);
         $this->applyRuntimeInstancesAssertion($state);
-        $this->assertTrue($cache->has('configuration-testCase-test'));
-        $this->assertIsArray(json_decode($cache->get('configuration-testCase-test'), true, 512, JSON_THROW_ON_ERROR));
-        
+        self::assertTrue($cache->has('configuration-testCase-test'));
+        self::assertIsArray(json_decode($cache->get('configuration-testCase-test'), true, 512, JSON_THROW_ON_ERROR));
+
         // Reload from cache
         $state = $loader->load();
         $this->applyPlugin1Assertion($state);
         $this->applyContentElementAssertion($state);
-        
+
         // The runtime instances should exist, but be broken now, because they got serialized into a json object
-        $this->assertIsArray($state->get('runtimeInstances'));
+        self::assertIsArray($state->get('runtimeInstances'));
         foreach ($state->get('runtimeInstances') as $instance) {
-            $this->assertIsArray($instance);
-            $this->assertContains($instance['me'], ['runtime class!', 'plugin2']);
+            self::assertIsArray($instance);
+            self::assertContains($instance['me'], ['runtime class!', 'plugin2']);
         }
     }
-    
+
     public function testRuntimeLoad()
     {
         $loader = $this->makeTestLoader();
-        $cache  = new class(false) extends ExampleCacheImplementation
-        {
+        $cache  = new class(false) extends ExampleCacheImplementation {
             public $getWasCalled = false;
-            
+
             public function get($key, $default = null)
             {
                 $result = parent::get($key, $default);
                 if ($result !== $default) {
                     $this->getWasCalled = true;
                 }
-                
+
                 return $result;
             }
-            
+
         };
         $loader->setCache($cache);
-        
+
         $state = $loader->load(true);
         $this->applyPlugin1Assertion($state);
         $this->applyContentElementAssertion($state);
         $this->applyRuntimeInstancesAssertion($state);
-        $this->assertFalse($cache->getWasCalled);
-        $this->assertTrue($cache->has('configuration-testCase-test-runtimeDefinitions'));
-        $this->assertIsArray(json_decode($cache->get('configuration-testCase-test-runtimeDefinitions'), true, 512,
+        self::assertFalse($cache->getWasCalled);
+        self::assertTrue($cache->has('configuration-testCase-test-runtimeDefinitions'));
+        self::assertIsArray(json_decode($cache->get('configuration-testCase-test-runtimeDefinitions'), true, 512,
             JSON_THROW_ON_ERROR));
         $cache->getWasCalled = false;
-        
+
         // Reload using the definitions from cache
         $state = $loader->load(true);
-        $this->assertTrue($cache->getWasCalled);
+        self::assertTrue($cache->getWasCalled);
         $this->applyPlugin1Assertion($state);
         $this->applyContentElementAssertion($state);
         $this->applyRuntimeInstancesAssertion($state);
     }
-    
+
     protected function applyPlugin1Assertion(ConfigState $state): void
     {
-        $this->assertEquals([
+        self::assertEquals([
             'option' => 'projectOption',
             'list'   => [
                 'Plugin2' => 'plugin 2 value: Yes, you can configure plugins from other plugins',
@@ -123,10 +122,10 @@ class LoaderFunctionalTest extends TestCase
             ],
         ], $state->get('plugin1'));
     }
-    
+
     protected function applyContentElementAssertion(ConfigState $state): void
     {
-        $this->assertEquals([
+        self::assertEquals([
             'Text'  => [
                 'namespace' => 'Plugin3',
                 'key'       => 'Text',
@@ -146,22 +145,22 @@ class LoaderFunctionalTest extends TestCase
             ],
         ], $state->get('contentElements'));
     }
-    
+
     protected function applyRuntimeInstancesAssertion(ConfigState $state): void
     {
-        $this->assertIsArray($state->get('runtimeInstances'));
+        self::assertIsArray($state->get('runtimeInstances'));
         foreach ($state->get('runtimeInstances') as $instance) {
             $ref = new ReflectionObject($instance);
-            $this->assertTrue($ref->isAnonymous());
-            $this->assertContains($instance->me, ['runtime class!', 'plugin2']);
+            self::assertTrue($ref->isAnonymous());
+            self::assertContains($instance->me, ['runtime class!', 'plugin2']);
         }
     }
-    
+
     protected function makeTestLoader(): Loader
     {
         $loader = $this->makeConfiguredLoaderInstance([], ['Handler']);
         $this->registerExampleRootLocations($loader);
-        
+
         return $loader;
     }
 }

@@ -25,9 +25,9 @@
         "psr/container": "^1.0",
         "psr/event-dispatcher": "^1.0",
         "laminas/laminas-file": "^2.8",
-        "marcj/topsort": "^1.1",
+        "marcj/topsort": "^2.0",
         "neunerlei/path-util": "^2.4",
-        "neunerlei/arrays": "^1.2"
+        "neunerlei/arrays": "^3.1"
     },
     "require-dev": {
         "roave/security-advisories": "dev-master",

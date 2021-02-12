@@ -84,7 +84,7 @@ class ConfigState
     public function set(string $key, $value): self
     {
         $this->handleWatchers(function () use ($key, $value) {
-            $this->state = Arrays::setPath($this->state, $this->getKeyPath($key), $value);
+            $this->state = ArraysWatchable::setPath($this->state, $this->getKeyPath($key), $value);
         });
 
         return $this;
@@ -102,7 +102,7 @@ class ConfigState
     {
         $this->handleWatchers(function () use ($list) {
             foreach ($list as $k => $v) {
-                $this->state = Arrays::setPath($this->state, $this->getKeyPath($k), $v);
+                $this->state = ArraysWatchable::setPath($this->state, $this->getKeyPath($k), $v);
             }
         });
 
@@ -248,16 +248,12 @@ class ConfigState
         }
 
         // Collect the list of watchers and notify them
-        $pathClassBackup = Arrays::$pathClass;
         try {
-            WatchableArrayPaths::$keysToTrigger = [];
-            Arrays::$pathClass                  = WatchableArrayPaths::class;
+            ArraysWatchable::$keysToTrigger = [];
 
             $callback();
 
-            $keysToTrigger                      = array_keys(WatchableArrayPaths::$keysToTrigger);
-            Arrays::$pathClass                  = $pathClassBackup;
-            WatchableArrayPaths::$keysToTrigger = [];
+            $keysToTrigger = array_keys(ArraysWatchable::$keysToTrigger);
 
             foreach ($keysToTrigger as $key) {
                 if (empty($this->watchers[$key])) {
@@ -270,8 +266,7 @@ class ConfigState
             }
 
         } finally {
-            Arrays::$pathClass                  = $pathClassBackup;
-            WatchableArrayPaths::$keysToTrigger = [];
+            ArraysWatchable::$keysToTrigger = [];
         }
     }
 
