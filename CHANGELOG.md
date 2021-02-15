@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.2.0](https://github.com/Neunerlei/configuration/compare/v2.1.0...v2.2.0) (2021-02-15)
+
+
+### Features
+
+* implement new BeforeStateCachingEvent ([0b814d8](https://github.com/Neunerlei/configuration/commit/0b814d8d996191d94f145036a0e1e962451a1087))
+
 ## [2.1.0](https://github.com/Neunerlei/configuration/compare/v2.0.1...v2.1.0) (2021-02-15)
 
 
