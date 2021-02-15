@@ -110,6 +110,127 @@ class ConfigState
     }
 
     /**
+     * Helper to attach the given value to a string key in the state object.
+     * If the value is currently no string, the old value will be dropped and replaced with the given value!
+     *
+     * @param   string  $key    The storage key to store the value at
+     * @param   string  $value  The value to add
+     * @param   bool    $nl     If set to true a new line will be added before the value.
+     *                          If the value is currently empty no new line will be inserted
+     *
+     * @return $this
+     */
+    public function attachToString(
+        string $key,
+        string $value,
+        bool $nl = false
+    ): self {
+        if (empty($value)) {
+            return $this;
+        }
+
+        $v = $this->get($key, '');
+
+        if (! is_string($v)) {
+            $v = '';
+        }
+
+        $this->set($key, $v . ($nl && ! empty($v) ? PHP_EOL : '') . $value);
+
+        return $this;
+    }
+
+    /**
+     * Helper to attach a given value at the end of an array. If the given key is not yet an array,
+     * it will be converted into one.
+     *
+     * @param   string  $key    The storage key to store the value at
+     * @param   mixed   $value  The value to add
+     *
+     * @return $this
+     */
+    public function attachToArray(string $key, $value): self
+    {
+        $v = $this->get($key, []);
+
+        if (! is_array($v)) {
+            $v = [];
+        }
+
+        $v[] = $value;
+        $this->set($key, $v);
+
+        return $this;
+    }
+
+    /**
+     * Helper to merge the given value into an existing array. If the given key is not yet an array,
+     * it will be converted into one. Numeric keys will not be overwritten!
+     *
+     * @param   string  $key    The storage key to store the value at
+     * @param   array   $value  The value to merge into the existing array
+     *
+     * @return $this
+     */
+    public function mergeIntoArray(string $key, array $value): self
+    {
+        if (empty($value)) {
+            return $this;
+        }
+
+        $v = $this->get($key, []);
+        if (! is_array($v)) {
+            $v = [];
+        }
+        $v = Arrays::merge($v, $value, 'nn');
+        $this->set($key, $v);
+
+        return $this;
+    }
+
+    /**
+     * Helper to store a given $value as a json encoded value into the state object.
+     * This can be helpful if you have a big data object which is only required once or twice in 100 requests,
+     * so the cache can handle the value as a string and does not have to rehydrate the data on every request.
+     *
+     * @param   string  $key              The storage key to store the value at
+     * @param   mixed   $value            The value to add
+     * @param   bool    $writeEmpty       If this is TRUE empty values are stored into the state, too.
+     *                                    Otherwise NULL is written into the state.
+     *
+     * @return $this
+     * @throws \JsonException
+     */
+    public function setAsJson(string $key, $value, bool $writeEmpty = false): self
+    {
+        if (empty($value) && ! $writeEmpty) {
+            $this->set($key, null);
+
+            return $this;
+        }
+
+        $this->set($key, json_encode($value, JSON_THROW_ON_ERROR));
+
+        return $this;
+    }
+
+    /**
+     * Helper to store a given $value as a serialized string into the state object.
+     * This can be helpful if you have a object you want to store in the state that can be serialized
+     *
+     * @param   string  $key    The storage key to store the value at
+     * @param   mixed   $value  The value to add
+     *
+     * @return $this
+     */
+    public function setSerialized(string $key, $value): self
+    {
+        $this->set($key, serialize($value));
+
+        return $this;
+    }
+
+    /**
      * Returns the stored value for a given key, or returns the $fallback
      * if the key was not found. Note: The method is namespace sensitive!
      *

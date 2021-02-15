@@ -311,4 +311,126 @@ class ConfigStateTest extends TestCase
 
         static::assertEquals(2, $i);
     }
+
+    public function testAttachToString(): void
+    {
+        $state = new ConfigState([]);
+        $state->attachToString('foo', '');
+        static::assertNull($state->get('foo'));
+
+        $state = new ConfigState([]);
+        $state->attachToString('foo', 'asdf');
+        $state->attachToString('foo', 'jklö');
+        $state->attachToString('foo', 'asdf', true);
+        static::assertEquals('asdfjklö' . PHP_EOL . 'asdf', $state->get('foo'));
+
+        $state = new ConfigState([]);
+        $state->set('foo', 123);
+        $state->attachToString('foo', 'asdf');
+        static::assertEquals('asdf', $state->get('foo'));
+
+        $state = new ConfigState([]);
+        $state->set('foo', []);
+        $state->attachToString('foo', 'asdf');
+        static::assertEquals('asdf', $state->get('foo'));
+    }
+
+    public function testAttachToArray(): void
+    {
+        $state = new ConfigState([]);
+        $state->set('foo', [123]);
+        $state->attachToArray('foo', 'foo');
+        $state->attachToArray('foo', 'bar');
+        $state->attachToArray('foo', 'baz');
+        static::assertEquals([123, 'foo', 'bar', 'baz'], $state->get('foo'));
+
+        $state = new ConfigState([]);
+        $state->set('foo', 'foo');
+        $state->attachToArray('foo', 'foo');
+        $state->attachToArray('foo', 'bar');
+        $state->attachToArray('foo', 'baz');
+        static::assertEquals(['foo', 'bar', 'baz'], $state->get('foo'));
+
+        $state = new ConfigState([]);
+        $state->set('foo', ['foo' => 'bar']);
+        $state->attachToArray('foo', 'baz');
+        static::assertEquals(['foo' => 'bar', 'baz'], $state->get('foo'));
+    }
+
+    public function testMergeIntoArray(): void
+    {
+        $state = new ConfigState([]);
+        $state->mergeIntoArray('foo', []);
+        static::assertNull($state->get('foo'));
+
+        $state = new ConfigState([]);
+        $state->set('foo', []);
+        $state->mergeIntoArray('foo', ['foo', 'bar']);
+        static::assertEquals(['foo', 'bar'], $state->get('foo'));
+
+        $state = new ConfigState([]);
+        $state->mergeIntoArray('foo', ['foo']);
+        static::assertEquals(['foo'], $state->get('foo'));
+
+        $state = new ConfigState([]);
+        $state->set('foo', 'string');
+        $state->mergeIntoArray('foo', ['foo']);
+        static::assertEquals(['foo'], $state->get('foo'));
+
+        $state = new ConfigState([]);
+        $state->set('foo', ['foo' => ['bar', 'asdf' => ['foo']]]);
+        $state->mergeIntoArray('foo', ['bar']);
+        $state->mergeIntoArray('foo', ['foo' => ['asdf' => ['bar']]]);
+        static::assertEquals([
+            'foo' => [
+                'bar',
+                'asdf' => ['foo', 'bar'],
+            ],
+            'bar',
+        ], $state->get('foo'));
+    }
+
+    public function testSetAsJson(): void
+    {
+        $state = new ConfigState([]);
+        $state->setAsJson('foo', 'bar');
+        static::assertEquals('"bar"', $state->get('foo'));
+
+        $state = new ConfigState([]);
+        $state->setAsJson('foo', ['bar', 'baz']);
+        static::assertEquals('["bar","baz"]', $state->get('foo'));
+
+        $state = new ConfigState([]);
+        $state->setAsJson('foo', ['foo' => 'bar', 'bar' => 'baz']);
+        static::assertEquals('{"foo":"bar","bar":"baz"}', $state->get('foo'));
+
+        $state = new ConfigState([]);
+        $state->setAsJson('foo', []);
+        static::assertNull($state->get('foo'));
+        $state->setAsJson('foo', [], true);
+        static::assertEquals('[]', $state->get('foo'));
+
+        $state = new ConfigState([]);
+        $state->setAsJson('foo', '');
+        static::assertNull($state->get('foo'));
+        $state->setAsJson('foo', '', true);
+        static::assertEquals('""', $state->get('foo'));
+
+        $state = new ConfigState([]);
+        $state->setAsJson('foo', 0);
+        static::assertNull($state->get('foo'));
+        $state->setAsJson('foo', 0, true);
+        static::assertEquals('0', $state->get('foo'));
+    }
+
+    public function testSetSerialized(): void
+    {
+        $state = new ConfigState([]);
+        $v     = ['foo' => 'bar', 'bar' => 123];
+        $state->setSerialized('foo', $v);
+        static::assertEquals(serialize($v), $state->get('foo'));
+
+        $state->setSerialized('foo', (object)$v);
+        static::assertEquals(serialize((object)$v), $state->get('foo'));
+    }
 }
