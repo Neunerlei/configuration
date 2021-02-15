@@ -35,15 +35,24 @@ trait LocallyCachedStatePropertyTrait
      *
      * This method should be called once per object creation presumably in the constructor.
      *
-     * @param   string       $propertyName  The name of the property on the local object to keep in sync with the
-     *                                      config state
-     * @param   string       $configKey     The key of the configuration value to keep in sync
-     * @param   ConfigState  $configState   The config state to sync the property with
+     * @param   string         $propertyName  The name of the property on the local object to keep in sync with the
+     *                                        config state
+     * @param   string         $configKey     The key of the configuration value to keep in sync
+     * @param   ConfigState    $configState   The config state to sync the property with
+     * @param   callable|null  $filter        Optional filter callback that is executed before the updated
+     *                                        value will be written into the local property. This allows
+     *                                        unpacking of serialized values on the fly, a "cheap" change listener,
+     *                                        or last-minute value modification. The callback receives the value
+     *                                        an must return the filtered value.
      *
      * @see \Neunerlei\Configuration\State\ConfigState::addWatcher()
      */
-    protected function registerCachedProperty(string $propertyName, string $configKey, ConfigState $configState): void
-    {
+    protected function registerCachedProperty(
+        string $propertyName,
+        string $configKey,
+        ConfigState $configState,
+        ?callable $filter = null
+    ): void {
         if (! property_exists($this, $propertyName)) {
             throw new InvalidArgumentException(
                 'The given property: "' . $propertyName . '" does not exist in class: "'
@@ -51,8 +60,8 @@ trait LocallyCachedStatePropertyTrait
         }
 
         $this->{$propertyName} = $configState->get($configKey);
-        $configState->addWatcher($configKey, function ($v) use ($propertyName) {
-            $this->{$propertyName} = $v;
+        $configState->addWatcher($configKey, function ($v) use ($propertyName, $filter) {
+            $this->{$propertyName} = $filter !== null ? call_user_func($filter, $v) : $v;
         });
     }
 }

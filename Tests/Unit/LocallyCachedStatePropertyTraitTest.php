@@ -32,15 +32,23 @@ class LocallyCachedStatePropertyTraitTest extends TestCase
 
     public function testSync()
     {
+        $filter = function ($v) {
+            self::assertEquals('foo', $v);
+
+            return 'bar';
+        };
+
         $state = new ConfigState([]);
-        $mock  = new class($state) {
+        $mock  = new class($state, $filter) {
             use LocallyCachedStatePropertyTrait;
 
             public $property;
+            public $propertyFiltered;
 
-            public function __construct(ConfigState $state)
+            public function __construct(ConfigState $state, callable $filter)
             {
                 $this->registerCachedProperty('property', 'test.property', $state);
+                $this->registerCachedProperty('propertyFiltered', 'test.filter', $state, $filter);
             }
         };
 
@@ -52,6 +60,9 @@ class LocallyCachedStatePropertyTraitTest extends TestCase
         $state->set('test.property.bar.foo', 234);
         $state->set('test.property.foo', 1);
         self::assertEquals(['bar' => ['baz' => 123, 'foo' => 234], 'foo' => 1], $mock->property);
+
+        $state->set('test.filter', 'foo');
+        self::assertEquals('bar', $mock->propertyFiltered);
     }
 
     public function testInvalidPropertyNameException()
