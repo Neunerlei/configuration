@@ -292,15 +292,28 @@ class ConfigState
      * @param   \Neunerlei\Configuration\State\ConfigState  $state  The state to be merged into this state object
      *
      * @return \Neunerlei\Configuration\State\ConfigState
-     * @throws \Neunerlei\Arrays\ArrayException
      */
-    public function mergeWith(ConfigState $state): ConfigState
+    public function mergeWith(ConfigState $state): self
     {
-        $clone           = clone $this;
-        $clone->state    = Arrays::merge($clone->getAll(), $state->getAll());
-        $clone->watchers = Arrays::merge($clone->watchers, $state->watchers);
+        $clone = clone $this;
 
-        return $clone;
+        return $clone->importFrom($state);
+    }
+
+    /**
+     * Quite similar to mergeWith() but imports the state of the given configuration into THIS instance,
+     * instead of creating a new instance.
+     *
+     * @param   \Neunerlei\Configuration\State\ConfigState  $state
+     *
+     * @return $this
+     */
+    public function importFrom(ConfigState $state): self
+    {
+        $this->state    = Arrays::merge($this->state, $state->getAll(), 'nn');
+        $this->watchers = Arrays::merge($this->watchers, $state->watchers, 'nn');
+
+        return $this;
     }
 
     /**
