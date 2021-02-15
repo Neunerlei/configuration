@@ -27,6 +27,7 @@ use AppendIterator;
 use Neunerlei\Arrays\Arrays;
 use Neunerlei\Configuration\Event\AfterConfigLoadEvent;
 use Neunerlei\Configuration\Event\BeforeConfigLoadEvent;
+use Neunerlei\Configuration\Event\BeforeStateCachingEvent;
 use Neunerlei\Configuration\Event\ConfigFinderFilterEvent;
 use Neunerlei\Configuration\Event\HandlerFinderFilterEvent;
 use Neunerlei\Configuration\Exception\InvalidContextClassException;
@@ -585,6 +586,13 @@ class Loader
         // Run the handlers
         foreach ($handlerFinder->find($this->loaderContext) as $handlerDefinition) {
             $configFinder->find($handlerDefinition, $this->loaderContext->configContext)->process();
+        }
+
+        // Allow filtering before we write the state into the cache
+        if (isset($this->loaderContext->eventDispatcher)) {
+            $this->loaderContext->eventDispatcher->dispatch(
+                new BeforeStateCachingEvent($hasCache, $cacheKey, $this->loaderContext, $this)
+            );
         }
 
         // Store the state into the cache

@@ -34,6 +34,7 @@ use Neunerlei\ConfigTests\Fixture\EventFunctionalTest\FixtureTestEventDispatcher
 use Neunerlei\ConfigTests\LoaderTestTrait;
 use Neunerlei\Configuration\Event\AfterConfigLoadEvent;
 use Neunerlei\Configuration\Event\BeforeConfigLoadEvent;
+use Neunerlei\Configuration\Event\BeforeStateCachingEvent;
 use Neunerlei\Configuration\Event\ConfigDefinitionFilterEvent;
 use Neunerlei\Configuration\Event\ConfigFinderFilterEvent;
 use Neunerlei\Configuration\Event\ConfigHandlerFilterEvent;
@@ -52,55 +53,55 @@ use PHPUnit\Framework\TestCase;
 class EventFunctionalTest extends TestCase
 {
     use LoaderTestTrait;
-    
+
     public function provideTestEventDispatchingData(): array
     {
         $cache = new ExampleCacheImplementation(false);
-        
+
         return [
             // Normal event handling on the first load
             [
                 false,
                 function (FixtureTestEventDispatcher $dispatcher) use ($cache) {
                     $configDefinitionFilterEventAssertionsExecuted = false;
-                    
+
                     $dispatcher->registerOnUnknownEventHandler(function (object $event) {
                         $this->fail('A unknown event was dispatched: ' . get_class($event));
                     });
-                    
+
                     $dispatcher->registerHandler(AfterConfigLoadEvent::class,
                         function (AfterConfigLoadEvent $event) use (&$configDefinitionFilterEventAssertionsExecuted) {
                             if (! $configDefinitionFilterEventAssertionsExecuted) {
                                 $this->fail('The ' . ConfigDefinitionFilterEvent::class . ' was not tested correctly!');
                             }
-                            
+
                             $this->assertInstanceOf(LoaderContext::class, $event->getLoaderContext());
-                            
+
                             $this->assertFalse($event->isCached());
                             $this->assertFalse($event->isRuntime());
                             $this->assertInstanceOf(ConfigState::class, $event->getState());
                             $this->assertEquals(['plugin1', 'contentElements', 'runtimeInstances'],
                                 array_keys($event->getState()->getAll()));
                         });
-                    
+
                     $dispatcher->registerHandler(BeforeConfigLoadEvent::class,
                         function (BeforeConfigLoadEvent $event) use ($cache) {
                             $this->assertFalse($event->isRuntime());
                             $this->assertInstanceOf(LoaderContext::class, $event->getLoaderContext());
                             $this->assertInstanceOf(Loader::class, $event->getLoader());
-                            
+
                             // Register the cache handler
                             $event->getLoader()->setCache($cache);
-                            
+
                             // Test context update
                             $context    = $event->getLoaderContext();
                             $tmpContext = new LoaderContext();
                             $event->setLoaderContext($tmpContext);
                             $this->assertSame($tmpContext, $event->getLoaderContext());
-                            
+
                             $event->setLoaderContext($context);
                         });
-                    
+
                     $dispatcher->registerHandler(ConfigDefinitionFilterEvent::class,
                         function (ConfigDefinitionFilterEvent $event) use (
                             &$configDefinitionFilterEventAssertionsExecuted
@@ -114,7 +115,7 @@ class EventFunctionalTest extends TestCase
                                 ExampleContentElementHandler::class,
                                 ExampleRuntimeHandler::class,
                             ]);
-                            
+
                             // We only test the methods for a single handler to avoid overhead
                             if ($event->getHandlerDefinition()->className === ExamplePluginHandler::class) {
                                 $configDefinitionFilterEventAssertionsExecuted = true;
@@ -122,54 +123,53 @@ class EventFunctionalTest extends TestCase
                                     PluginRuntimeConfig::class,
                                     PluginConfig::class,
                                 ], $event->getConfigClasses());
-                                
+
                                 $configClasses = $event->getConfigClasses();
                                 $event->setConfigClasses([]);
                                 $this->assertEquals([], $event->getConfigClasses());
                                 $event->setConfigClasses($configClasses);
-                                
+
                                 $this->assertEquals([], $event->getOverrideConfigClasses());
-                                
+
                                 $overrideClasses = $event->getOverrideConfigClasses();
                                 $event->setOverrideConfigClasses([]);
                                 $this->assertEquals([], $event->getOverrideConfigClasses());
                                 $event->setOverrideConfigClasses($overrideClasses);
-                                
+
                                 $this->assertEquals([
                                     PluginRuntimeConfig::class => 'Plugin2',
                                     PluginConfig::class        => 'project',
                                 ], $event->getClassNamespaceMap());
-                                
+
                                 $nsMap = $event->getClassNamespaceMap();
                                 $event->setClassNamespaceMap([]);
                                 $this->assertEquals([], $event->getClassNamespaceMap());
                                 $event->setClassNamespaceMap($nsMap);
-                                
+
                                 $definition    = $event->getHandlerDefinition();
                                 $tmpDefinition = new HandlerDefinition();
                                 $event->setHandlerDefinition($tmpDefinition);
                                 $this->assertSame($tmpDefinition, $event->getHandlerDefinition());
-                                
+
                                 $event->setHandlerDefinition($definition);
                             }
                         });
-                    
+
                     $dispatcher->registerHandler(ConfigFinderFilterEvent::class,
                         function (ConfigFinderFilterEvent $event) {
                             $this->assertInstanceOf(ConfigFinder::class, $event->getConfigFinder());
                             $this->assertInstanceOf(LoaderContext::class, $event->getLoaderContext());
-                            
+
                             $finder    = $event->getConfigFinder();
-                            $tmpFinder = new class extends ConfigFinder
-                            {
+                            $tmpFinder = new class extends ConfigFinder {
                             };
                             $event->setConfigFinder($tmpFinder);
                             $this->assertSame($tmpFinder, $event->getConfigFinder());
-                            
+
                             $event->setConfigFinder($finder);
-                            
+
                         });
-                    
+
                     $dispatcher->registerHandler(ConfigHandlerFilterEvent::class,
                         function (ConfigHandlerFilterEvent $event) {
                             $this->assertInstanceOf(LoaderContext::class, $event->getLoaderContext());
@@ -180,26 +180,35 @@ class EventFunctionalTest extends TestCase
                                 ExampleNoopHandler::class,
                                 ExampleRuntimeHandler::class,
                             ], array_keys($event->getHandlers()));
-                            
+
                             $handlers = $event->getHandlers();
                             $event->setHandlers([]);
                             $this->assertEquals([], $event->getHandlers());
-                            
+
                             $event->setHandlers($handlers);
                         });
-                    
+
                     $dispatcher->registerHandler(HandlerFinderFilterEvent::class,
                         function (HandlerFinderFilterEvent $event) {
                             $this->assertInstanceOf(HandlerFinder::class, $event->getHandlerFinder());
                             $this->assertInstanceOf(LoaderContext::class, $event->getLoaderContext());
-                            
+
                             $finder    = $event->getHandlerFinder();
                             $tmpFinder = new FilteredHandlerFinder([], []);
                             $event->setHandlerFinder($tmpFinder);
                             $this->assertSame($tmpFinder, $event->getHandlerFinder());
-                            
+
                             $event->setHandlerFinder($finder);
-                            
+
+                        });
+
+                    $dispatcher->registerHandler(BeforeStateCachingEvent::class,
+                        function (BeforeStateCachingEvent $event) {
+                            $this->assertTrue($event->hasCache());
+                            $this->assertInstanceOf(Loader::class, $event->getLoader());
+                            $this->assertInstanceOf(LoaderContext::class, $event->getLoaderContext());
+                            $this->assertInstanceOf(ConfigState::class, $event->getState());
+                            $this->assertEquals('configuration-testCase-test', $event->getCacheKey());
                         });
                 },
             ],
@@ -210,22 +219,37 @@ class EventFunctionalTest extends TestCase
                     $dispatcher->registerOnUnknownEventHandler(function () {
                         // Silence
                     });
-                    
+
                     $dispatcher->registerHandler(BeforeConfigLoadEvent::class,
                         function (BeforeConfigLoadEvent $event) use ($cache) {
                             $this->assertFalse($event->isRuntime());
                             $event->getLoader()->setCache($cache);
                         });
-                    
+
                     $dispatcher->registerHandler(AfterConfigLoadEvent::class,
                         function (AfterConfigLoadEvent $event) {
                             // This is true now, because the cache has the result from the last test run stored
                             $this->assertTrue($event->isCached());
                             $this->assertFalse($event->isRuntime());
-                            
+
                             $this->assertInstanceOf(ConfigState::class, $event->getState());
                             $this->assertEquals(['plugin1', 'contentElements', 'runtimeInstances'],
                                 array_keys($event->getState()->getAll()));
+                        });
+                },
+            ],
+            // Check before caching event without cache
+            [
+                false,
+                function (FixtureTestEventDispatcher $dispatcher) use ($cache) {
+                    $dispatcher->registerOnUnknownEventHandler(function () {
+                        // Silence
+                    });
+
+                    $dispatcher->registerHandler(BeforeStateCachingEvent::class,
+                        function (BeforeStateCachingEvent $event) {
+                            $this->assertFalse($event->hasCache());
+                            $this->assertEquals('configuration-testCase-test', $event->getCacheKey());
                         });
                 },
             ],
@@ -238,19 +262,19 @@ class EventFunctionalTest extends TestCase
                             $this->assertTrue($event->isRuntime());
                             $event->getLoader()->setCache($cache);
                         });
-                    
+
                     $dispatcher->registerHandler(AfterConfigLoadEvent::class,
                         function (AfterConfigLoadEvent $event) {
                             $this->assertFalse($event->isCached());
                             $this->assertTrue($event->isRuntime());
-                            
+
                             $this->assertInstanceOf(ConfigState::class, $event->getState());
                             $this->assertEquals(['plugin1', 'contentElements', 'runtimeInstances'],
                                 array_keys($event->getState()->getAll()));
                         });
                 },
             ],
-            
+
             // Check if the runtime flag is set, as well as the cache flag
             [
                 true,
@@ -260,12 +284,12 @@ class EventFunctionalTest extends TestCase
                             $this->assertTrue($event->isRuntime());
                             $event->getLoader()->setCache($cache);
                         });
-                    
+
                     $dispatcher->registerHandler(AfterConfigLoadEvent::class,
                         function (AfterConfigLoadEvent $event) {
                             $this->assertTrue($event->isCached());
                             $this->assertTrue($event->isRuntime());
-                            
+
                             $this->assertInstanceOf(ConfigState::class, $event->getState());
                             $this->assertEquals(['plugin1', 'contentElements', 'runtimeInstances'],
                                 array_keys($event->getState()->getAll()));
@@ -274,7 +298,7 @@ class EventFunctionalTest extends TestCase
             ],
         ];
     }
-    
+
     /**
      * @param   bool      $isRuntime
      * @param   callable  $dispatcherConfigurator
