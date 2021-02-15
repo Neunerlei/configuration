@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.1.0](https://github.com/Neunerlei/configuration/compare/v2.0.1...v2.1.0) (2021-02-15)
+
+
+### Features
+
+* **ConfigState:** introduce new setter utils ([02214ad](https://github.com/Neunerlei/configuration/commit/02214adfd43f30a69a928a676be900579efe08a0))
+* **LocallyCachedStatePropertyTrait:** introduce $filter parameter for registerCachedProperty() ([bebf6cd](https://github.com/Neunerlei/configuration/commit/bebf6cd51106d2ee2b9b0a0cf7aac06f0195cd83))
+
 ### [2.0.1](https://github.com/Neunerlei/configuration/compare/v2.0.0...v2.0.1) (2021-02-12)
 
 
