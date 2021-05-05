@@ -44,6 +44,7 @@ trait LocallyCachedStatePropertyTrait
      *                                        unpacking of serialized values on the fly, a "cheap" change listener,
      *                                        or last-minute value modification. The callback receives the value
      *                                        an must return the filtered value.
+     * @param   mixed          $fallback      Set as a default value if the $configKey was not found in the state
      *
      * @see \Neunerlei\Configuration\State\ConfigState::addWatcher()
      */
@@ -51,7 +52,8 @@ trait LocallyCachedStatePropertyTrait
         string $propertyName,
         string $configKey,
         ConfigState $configState,
-        ?callable $filter = null
+        ?callable $filter = null,
+        $fallback = null
     ): void {
         if (! property_exists($this, $propertyName)) {
             throw new InvalidArgumentException(
@@ -59,7 +61,9 @@ trait LocallyCachedStatePropertyTrait
                 . static::class . '"!');
         }
 
-        $this->{$propertyName} = $configState->get($configKey);
+        $v                     = $configState->get($configKey, $fallback);
+        $this->{$propertyName} = $filter !== null ? call_user_func($filter, $v) : $v;
+
         $configState->addWatcher($configKey, function ($v) use ($propertyName, $filter) {
             $this->{$propertyName} = $filter !== null ? call_user_func($filter, $v) : $v;
         });

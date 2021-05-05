@@ -32,23 +32,15 @@ class LocallyCachedStatePropertyTraitTest extends TestCase
 
     public function testSync()
     {
-        $filter = function ($v) {
-            self::assertEquals('foo', $v);
-
-            return 'bar';
-        };
-
         $state = new ConfigState([]);
-        $mock  = new class($state, $filter) {
+        $mock  = new class($state) {
             use LocallyCachedStatePropertyTrait;
 
             public $property;
-            public $propertyFiltered;
 
-            public function __construct(ConfigState $state, callable $filter)
+            public function __construct(ConfigState $state)
             {
                 $this->registerCachedProperty('property', 'test.property', $state);
-                $this->registerCachedProperty('propertyFiltered', 'test.filter', $state, $filter);
             }
         };
 
@@ -61,8 +53,6 @@ class LocallyCachedStatePropertyTraitTest extends TestCase
         $state->set('test.property.foo', 1);
         self::assertEquals(['bar' => ['baz' => 123, 'foo' => 234], 'foo' => 1], $mock->property);
 
-        $state->set('test.filter', 'foo');
-        self::assertEquals('bar', $mock->propertyFiltered);
     }
 
     public function testInvalidPropertyNameException()
@@ -79,4 +69,32 @@ class LocallyCachedStatePropertyTraitTest extends TestCase
         };
     }
 
+    public function testFilterAndDefault()
+    {
+        $filter = function ($v) {
+            return is_string($v) ? $v . '.filtered' : $v;
+        };
+
+        $state = new ConfigState([]);
+        $mock  = new class($state, $filter) {
+            use LocallyCachedStatePropertyTrait;
+
+            public $property;
+            public $propertyDefault;
+
+            public function __construct(ConfigState $state, callable $filter)
+            {
+                $this->registerCachedProperty('property', 'value', $state, $filter);
+                $this->registerCachedProperty('propertyDefault', 'value', $state, $filter, 'default');
+            }
+        };
+
+        static::assertNull($mock->property);
+        static::assertEquals('default.filtered', $mock->propertyDefault);
+
+        $state->set('value', 'foo');
+
+        static::assertEquals('foo.filtered', $mock->property);
+        static::assertEquals('foo.filtered', $mock->propertyDefault);
+    }
 }
