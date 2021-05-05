@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.4.0](https://github.com/Neunerlei/configuration/compare/v2.3.0...v2.4.0) (2021-05-05)
+
+
+### Features
+
+* **State:** execute $filter on initial state in LocallyCachedStatePropertyTrait ([21be170](https://github.com/Neunerlei/configuration/commit/21be170847fd82a851549880dcfced7e50d3fb6d))
+
 ## [2.3.0](https://github.com/Neunerlei/configuration/compare/v2.2.0...v2.3.0) (2021-02-15)
 
 
