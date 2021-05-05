@@ -1,5 +1,6 @@
 {
     "name": "neunerlei/configuration",
+    "description": "Provides you a highly opinionated configuration / plugin loading framework for PHP",
     "license": "Apache-2.0",
     "authors": [
         {
@@ -16,8 +17,8 @@
     },
     "scripts": {
         "test": "phpunit",
-        "test-cover-clover": "phpunit --coverage-clover Tests/Coverage.xml",
-        "test-cover": "phpunit --coverage-html Tests/Coverage"
+        "test-cover-clover": "XDEBUG_MODE=coverage phpunit --coverage-clover Tests/Coverage.xml",
+        "test-cover": "XDEBUG_MODE=coverage phpunit --coverage-html Tests/Coverage"
     },
     "require": {
         "php": "^7.3",
