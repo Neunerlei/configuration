@@ -148,7 +148,7 @@ class ConfigFinder implements ConfigFinderInterface
                 }
 
                 throw new ConfigClassNotAutoloadableException(
-                    'The configuration class "' . $className . '" is auto-loadable!');
+                    'The configuration class "' . $className . '" is not auto-loadable!');
             }
 
             // Check if class has the correct interface
