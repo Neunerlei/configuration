@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.4.2](https://github.com/Neunerlei/configuration/compare/v2.4.1...v2.4.2) (2021-10-25)
+
+
+### Bug Fixes
+
+* update dependencies ([3b2e54f](https://github.com/Neunerlei/configuration/commit/3b2e54ff768614fcea48ff4abf1620cb5c410dd5))
+
 ### [2.4.1](https://github.com/Neunerlei/configuration/compare/v2.4.0...v2.4.1) (2021-10-25)
 
 
