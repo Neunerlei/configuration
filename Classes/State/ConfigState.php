@@ -381,6 +381,8 @@ class ConfigState
         // Fastlane if we don't have watchers
         if (empty($this->watchers)) {
             $callback();
+
+            return;
         }
 
         // Collect the list of watchers and notify them
