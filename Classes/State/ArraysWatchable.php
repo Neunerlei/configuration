@@ -44,6 +44,64 @@ class ArraysWatchable extends Arrays
     protected static $currentKey = [];
 
     /**
+     * Special handler to merge two state arrays while collecting changes on them
+     *
+     * @param   array  $a  The list to merge $b into
+     * @param   array  $b  The list to merge into $a
+     *
+     * @return array
+     */
+    public static function mergeStates(array $a, array $b): array
+    {
+        return static::mergeStateWalker($a, $b, []);
+    }
+
+    /**
+     * Internal walker to simulate a merge that handles in the same way Arrays::merge($a, $b, 'nn') does.
+     * Changes will be tracked in the $keysToTrigger
+     *
+     * @param   array  $a
+     * @param   array  $b
+     * @param   array  $path
+     *
+     * @return array
+     */
+    protected static function mergeStateWalker(array $a, array $b, array $path): array
+    {
+        $o = $a;
+
+        foreach ($b as $k => $v) {
+            $_path   = $path;
+            $_path[] = $k;
+
+            static::$keysToTrigger[implode('.', $_path)] = true;
+
+            if ($v === '__UNSET') {
+                unset($o[$k]);
+                continue;
+            }
+
+            if (is_numeric($k)) {
+                $o[] = $v;
+                continue;
+            }
+
+            if (is_array($v)) {
+                $o[$k] = static::mergeStateWalker(
+                    is_array($a[$k] ?? null) ? $a[$k] : [],
+                    $v,
+                    $_path
+                );
+                continue;
+            }
+
+            $o[$k] = $v;
+        }
+
+        return $o;
+    }
+
+    /**
      * @inheritDoc
      */
     protected static function initWalkerStep(array $input, array &$path): array

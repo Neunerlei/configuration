@@ -562,7 +562,7 @@ class Loader
 
     /**
      * Performs a normal config load where the whole state object gets cached (if a cache is available)
-     * This saves the most performance but you can only fill the state with JSON-serializable data
+     * This saves the most performance, but you can only fill the state with JSON-serializable data
      *
      * @param   bool  $isCached
      *
@@ -582,12 +582,8 @@ class Loader
         if ($hasCache && $this->loaderContext->cache->has($cacheKey)) {
             $isCached = true;
 
-            return $getState()->setMultiple(
-            // @todo this should be done when saving the cache
-            // I don't do this until the next major version because it could break existing setups
-                Arrays::flatten(
-                    Arrays::makeFromJson($this->loaderContext->cache->get($cacheKey))
-                )
+            return $getState()->importFrom(
+                new ConfigState(Arrays::makeFromJson($this->loaderContext->cache->get($cacheKey)))
             );
         }
 

@@ -311,7 +311,9 @@ class ConfigState
     public function importFrom(ConfigState $state): self
     {
         $this->watchers = Arrays::merge($this->watchers, $state->watchers, 'nn');
-        $this->setMultiple(Arrays::flatten($state->getAll()));
+        $this->handleWatchers(function () use ($state) {
+            $this->state = ArraysWatchable::mergeStates($this->state, $state->getAll());
+        });
 
         return $this;
     }
@@ -387,13 +389,13 @@ class ConfigState
 
             $callback();
 
-            $keysToTrigger = array_keys(ArraysWatchable::$keysToTrigger);
-
-            foreach ($keysToTrigger as $key) {
+            foreach (array_keys(ArraysWatchable::$keysToTrigger) as $key) {
                 if (empty($this->watchers[$key])) {
                     continue;
                 }
+
                 $value = Arrays::getPath($this->state, $key);
+
                 foreach ($this->watchers[$key] as $watcher) {
                     $watcher($value);
                 }
