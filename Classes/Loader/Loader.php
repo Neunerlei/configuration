@@ -369,17 +369,21 @@ class Loader
      * Uses the previously given configuration to load the configuration
      * classes into a ConfigState object which then will be returned
      *
-     * @param   bool  $asRuntime  By default the whole config state content will be cached (if a cache was registered).
-     *                            If you set this to true only the found config sources will be cached, so you can also
-     *                            set instances or closures into your state. With the downside that the config classes
-     *                            have to be executed on each run at "runtime", hence the name.
+     * @param   bool              $asRuntime     By default, the whole config state content will be cached (if a cache
+     *                                           was registered). If you set this to true only the found config sources
+     *                                           will be cached, so you can also set instances or closures into your
+     *                                           state. With the downside that the config classes have to be executed
+     *                                           on each run at "runtime", hence the name.
+     * @param   ConfigState|null  $initialState  Allows you to inject an initial state object, to use instead of a
+     *                                           new state instance. NOTE: All values existing in the given state
+     *                                           will be stored in the cache, too!
      *
      * @return \Neunerlei\Configuration\State\ConfigState
      */
-    public function load(bool $asRuntime = false): ConfigState
+    public function load(bool $asRuntime = false, ?ConfigState $initialState = null): ConfigState
     {
         // Prepare the instances
-        $state = new ConfigState([]);
+        $state = $initialState ?? new ConfigState([]);
 
         // Create a new reference on the loader context to avoid pollution
         $cleanContext                       = $this->loaderContext;

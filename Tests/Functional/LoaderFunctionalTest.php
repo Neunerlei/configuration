@@ -112,6 +112,35 @@ class LoaderFunctionalTest extends TestCase
         $this->applyRuntimeInstancesAssertion($state);
     }
 
+    public function testWithInitialState(): void
+    {
+        $loader = $this->makeTestLoader();
+        $loader->clearRootLocations();
+        $state  = new ConfigState(['foo' => 'bar']);
+        $_state = $loader->load(false, $state);
+        self::assertEquals(['foo' => 'bar'], $_state->getAll());
+        self::assertSame($state, $_state);
+    }
+
+    public function testWithInitialStateAndCaching(): void
+    {
+        $loader = $this->makeTestLoader();
+        $loader->clearRootLocations();
+        $loader->setCache(new ExampleCacheImplementation(false));
+        $state  = new ConfigState(['foo' => 'bar']);
+        $_state = $loader->load(false, $state);
+        self::assertEquals(['foo' => 'bar'], $_state->getAll());
+        self::assertSame($state, $_state);
+
+        // Because the "foo" value of "bar" got cached, it will now
+        // override the value when being loaded from cache.
+        // This means "foo" => "faz" will become "foo" => "bar" again
+        $state  = new ConfigState(['foo' => 'faz', 'bar' => 'baz']);
+        $_state = $loader->load(false, $state);
+        self::assertEquals(['foo' => 'bar', 'bar' => 'baz'], $_state->getAll());
+        self::assertSame($state, $_state);
+    }
+
     protected function applyPlugin1Assertion(ConfigState $state): void
     {
         self::assertEquals([
