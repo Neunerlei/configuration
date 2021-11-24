@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.5.1](https://github.com/Neunerlei/configuration/compare/v2.5.0...v2.5.1) (2021-11-24)
+
+
+### Bug Fixes
+
+* allow newer psr/container on PHP74 ([3c75ec4](https://github.com/Neunerlei/configuration/commit/3c75ec4ae7e1302befa7860cecdafecb788994ec))
+
 ## [2.5.0](https://github.com/Neunerlei/configuration/compare/v2.4.3...v2.5.0) (2021-11-24)
 
 
