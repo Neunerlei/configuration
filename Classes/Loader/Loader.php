@@ -570,13 +570,15 @@ class Loader
         // Prepare cache storage
         $hasCache = isset($this->loaderContext->cache);
         $cacheKey = $this->makeCacheKey($this->loaderContext, false);
+        $getState = function (): ConfigState {
+            return $this->loaderContext->configContext->getState();
+        };
 
         // Handle a normal load
         if ($hasCache && $this->loaderContext->cache->has($cacheKey)) {
             $isCached = true;
 
-            // Load the state from the cache
-            return new ConfigState(Arrays::makeFromJson($this->loaderContext->cache->get($cacheKey)));
+            return $getState()->setMultiple(Arrays::makeFromJson($this->loaderContext->cache->get($cacheKey)));
         }
 
         // Compile state from config files
@@ -597,11 +599,9 @@ class Loader
 
         // Store the state into the cache
         if ($hasCache) {
-            $this->loaderContext->cache->set($cacheKey, json_encode(
-                $this->loaderContext->configContext->getState()->getAll(), JSON_THROW_ON_ERROR));
+            $this->loaderContext->cache->set($cacheKey, json_encode($getState()->getAll(), JSON_THROW_ON_ERROR));
         }
 
-        // Extract the state
-        return $this->loaderContext->configContext->getState();
+        return $getState();
     }
 }
