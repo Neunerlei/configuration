@@ -310,8 +310,8 @@ class ConfigState
      */
     public function importFrom(ConfigState $state): self
     {
-        $this->state    = Arrays::merge($this->state, $state->getAll(), 'nn');
         $this->watchers = Arrays::merge($this->watchers, $state->watchers, 'nn');
+        $this->setMultiple(Arrays::flatten($state->getAll()));
 
         return $this;
     }
