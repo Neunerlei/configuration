@@ -582,7 +582,13 @@ class Loader
         if ($hasCache && $this->loaderContext->cache->has($cacheKey)) {
             $isCached = true;
 
-            return $getState()->setMultiple(Arrays::makeFromJson($this->loaderContext->cache->get($cacheKey)));
+            return $getState()->setMultiple(
+            // @todo this should be done when saving the cache
+            // I don't do this until the next major version because it could break existing setups
+                Arrays::flatten(
+                    Arrays::makeFromJson($this->loaderContext->cache->get($cacheKey))
+                )
+            );
         }
 
         // Compile state from config files
