@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.6.0](https://github.com/Neunerlei/configuration/compare/v2.5.1...v2.6.0) (2021-11-24)
+
+
+### Features
+
+* **ConfigState:** implement less performance hungry state merge strategy ([eea9aef](https://github.com/Neunerlei/configuration/commit/eea9aef9eadfd96a313ef8958c696f2f25baf573))
+
 ### [2.5.1](https://github.com/Neunerlei/configuration/compare/v2.5.0...v2.5.1) (2021-11-24)
 
 
