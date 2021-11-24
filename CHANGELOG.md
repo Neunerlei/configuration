@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.5.0](https://github.com/Neunerlei/configuration/compare/v2.4.3...v2.5.0) (2021-11-24)
+
+
+### Features
+
+* **loader:** allow setting an initial state object when executing load() ([a4f09f0](https://github.com/Neunerlei/configuration/commit/a4f09f07090dd552cc2d3dca52ff5d7941c4b6d3))
+* ensure $loader->load() method does not create a new state object when loading data from cache ([71c74d0](https://github.com/Neunerlei/configuration/commit/71c74d00f5169861614883fc8327635e219dc82e))
+
+
+### Bug Fixes
+
+* downgrade psr/container to 1.1.1 to keep PHP73 compatibility ([702b6eb](https://github.com/Neunerlei/configuration/commit/702b6eb99e072d97dab617e72e64541bf4505d1a))
+* **ConfigState:** ensure watchers are triggered when using importFrom() ([89515f6](https://github.com/Neunerlei/configuration/commit/89515f6c3d9761d9e8db32b05a6ef52836d9a14d))
+* **Loader:** ensure cached values are injected into the state correctly ([eda1c86](https://github.com/Neunerlei/configuration/commit/eda1c862c250786d8f6abf5abe6ef513897d85d4))
+
 ### [2.4.3](https://github.com/Neunerlei/configuration/compare/v2.4.2...v2.4.3) (2021-10-25)
 
 ### [2.4.2](https://github.com/Neunerlei/configuration/compare/v2.4.1...v2.4.2) (2021-10-25)

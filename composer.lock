@@ -3501,5 +3501,6 @@
         "php": "^7.3"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.1.0"
+    "plugin-api-version": "2.1.0",
+    "version": "2.5.0"
 }
