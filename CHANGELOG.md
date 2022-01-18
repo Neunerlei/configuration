@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.6.1](https://github.com/Neunerlei/configuration/compare/v2.6.0...v2.6.1) (2021-11-24)
+
+
+### Bug Fixes
+
+* **ConfigState:** don't execute callback of handleWatchers() twice ([6b307ee](https://github.com/Neunerlei/configuration/commit/6b307eef856d7855a83c8bdca8a76748a3efc7ff))
+
 ## [2.6.0](https://github.com/Neunerlei/configuration/compare/v2.5.1...v2.6.0) (2021-11-24)
 
 
