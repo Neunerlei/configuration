@@ -296,13 +296,40 @@ class Loader
      * You have to clear the cache in order for load() to recompile the configuration
      * from your source classes
      *
-     * @param   \Psr\SimpleCache\CacheInterface  $cache
+     * @param   \Psr\SimpleCache\CacheInterface|null  $cache
      *
      * @return $this
      */
     public function setCache(?CacheInterface $cache): self
     {
         $this->loaderContext->cache = $cache;
+
+        return $this;
+    }
+
+    /**
+     * Defines the options to use, when merging a cached state into an existing, initial state object.
+     *
+     * @param   array  $options  $options  A list of options that define the merge strategy
+     *                           each option can be either BOOL for a global setting, or an array of state paths and
+     *                           their matching option like: ['foo.bar.baz' => true, 'foo.*.foo' => false, ...].
+     *                           the "*" is used as a wildcard, when defining paths. All options have "short-keys" to
+     *                           save on typing:
+     *                           - numericMerge|nm (FALSE): By default, array values of $b, with numeric keys will be
+     *                           appended to the array in $a, in the same way array_merge() works. To enable the
+     *                           overriding of values with numeric keys set this to true.
+     *                           - strictNumericMerge|sn (FALSE): If the "numericMerge" is true, only arrays with
+     *                           numeric keys are merged into each other. By setting this flag, values of ALL types
+     *                           with the same numeric key will get overwritten by the value in $b.
+     *                           - allowRemoval|r (TRUE): If true, the value "__UNSET" feature, which can be used in
+     *                           order to unset array keys in the original array, will be disabled.
+     *
+     * @return $this
+     * @see \Neunerlei\Configuration\State\ArraysWatchable::mergeStates()
+     */
+    public function setCacheMergeOptions(array $options): self
+    {
+        $this->loaderContext->cacheMergeOptions = $options;
 
         return $this;
     }
@@ -515,39 +542,39 @@ class Loader
     protected function performRuntimeLoad(bool &$isCached): ConfigState
     {
         // Prepare cache storage
-        $hasCache = isset($this->loaderContext->cache);
-        $cacheKey = $this->makeCacheKey($this->loaderContext, true);
+        $ctx      = $this->loaderContext;
+        $cache    = $ctx->cache ?? null;
+        $cacheKey = $this->makeCacheKey($ctx, true);
 
         // Load the config definitions
         /** @var \Neunerlei\Configuration\Loader\ConfigDefinition[] $configDefinitions */
         $configDefinitions = [];
-        if ($hasCache && $this->loaderContext->cache->has($cacheKey)) {
-            $isCached = true;
-
-            // Rehydrate the cached definitions
-            foreach (
-                Arrays::makeFromJson($this->loaderContext->cache->get($cacheKey))
-                as $dryConfigDefinition
-            ) {
-                $configDefinitions[] = ConfigDefinition::hydrate($this->loaderContext, $dryConfigDefinition);
-            }
+        if ($cache !== null && $cache->has($cacheKey)) {
+            $isCached          = true;
+            $configDefinitions = array_map(
+                static function (array $def) use ($ctx): ConfigDefinition {
+                    return ConfigDefinition::hydrate($ctx, $def);
+                },
+                Arrays::makeFromJson($cache->get($cacheKey))
+            );
         } else {
             // Find the config definitions
-            $handlerFinder = $this->makeHandlerFinder($this->loaderContext);
-            $configFinder  = $this->makeConfigFinder($this->loaderContext);
-            foreach ($handlerFinder->find($this->loaderContext) as $handlerDefinition) {
-                $configDefinitions[] = $configFinder->find($handlerDefinition, $this->loaderContext->configContext);
+            $handlerFinder = $this->makeHandlerFinder($ctx);
+            $configFinder  = $this->makeConfigFinder($ctx);
+            foreach ($handlerFinder->find($ctx) as $handlerDefinition) {
+                $configDefinitions[] = $configFinder->find($handlerDefinition, $ctx->configContext);
             }
 
-            // Cache the definitions if we have a cache to write them to
-            if ($hasCache) {
-                // Dehydrate the definitions
-                $dryConfigDefinitions = [];
-                foreach ($configDefinitions as $configDefinition) {
-                    $dryConfigDefinitions[] = $configDefinition->dehydrate();
-                }
-                // Cache the definitions for the next run
-                $this->loaderContext->cache->set($cacheKey, json_encode($dryConfigDefinitions, JSON_THROW_ON_ERROR));
+            // Cache the definitions for the next run, if we have a cache to write them to
+            if ($cache !== null) {
+                $cache->set(
+                    $cacheKey,
+                    Arrays::dumpToJson(
+                        array_map(static function (ConfigDefinition $def) {
+                            return $def->dehydrate();
+                        }, $configDefinitions)
+                    )
+                );
             }
         }
 
@@ -557,7 +584,7 @@ class Loader
         }
 
         // Extract the state
-        return $this->loaderContext->configContext->getState();
+        return $ctx->configContext->getState();
     }
 
     /**
@@ -572,42 +599,38 @@ class Loader
     protected function performLoad(bool &$isCached): ConfigState
     {
         // Prepare cache storage
-        $hasCache = isset($this->loaderContext->cache);
-        $cacheKey = $this->makeCacheKey($this->loaderContext, false);
-        $getState = function (): ConfigState {
-            return $this->loaderContext->configContext->getState();
-        };
+        $ctx      = $this->loaderContext;
+        $cache    = $ctx->cache ?? null;
+        $cacheKey = $this->makeCacheKey($ctx, false);
 
         // Handle a normal load
-        if ($hasCache && $this->loaderContext->cache->has($cacheKey)) {
+        if ($cache !== null && $cache->has($cacheKey)) {
             $isCached = true;
 
-            return $getState()->importFrom(
-                new ConfigState(Arrays::makeFromJson($this->loaderContext->cache->get($cacheKey)))
+            return $ctx->configContext->getState()->importFrom(
+                new ConfigState(Arrays::makeFromJson($cache->get($cacheKey))),
+                $ctx->cacheMergeOptions
             );
         }
 
         // Compile state from config files
-        $handlerFinder = $this->makeHandlerFinder($this->loaderContext);
-        $configFinder  = $this->makeConfigFinder($this->loaderContext);
+        $handlerFinder = $this->makeHandlerFinder($ctx);
+        $configFinder  = $this->makeConfigFinder($ctx);
 
         // Run the handlers
-        foreach ($handlerFinder->find($this->loaderContext) as $handlerDefinition) {
-            $configFinder->find($handlerDefinition, $this->loaderContext->configContext)->process();
+        foreach ($handlerFinder->find($ctx) as $handlerDefinition) {
+            $configFinder->find($handlerDefinition, $ctx->configContext)->process();
         }
 
         // Allow filtering before we write the state into the cache
-        if (isset($this->loaderContext->eventDispatcher)) {
-            $this->loaderContext->eventDispatcher->dispatch(
-                new BeforeStateCachingEvent($hasCache, $cacheKey, $this->loaderContext, $this)
-            );
-        }
+        $ctx->dispatchEvent(new BeforeStateCachingEvent($cache !== null, $cacheKey, $ctx, $this));
 
         // Store the state into the cache
-        if ($hasCache) {
-            $this->loaderContext->cache->set($cacheKey, json_encode($getState()->getAll(), JSON_THROW_ON_ERROR));
+        $state = $ctx->configContext->getState();
+        if ($cache !== null) {
+            $cache->set($cacheKey, Arrays::dumpToJson($state->getAll()));
         }
 
-        return $getState();
+        return $state;
     }
 }

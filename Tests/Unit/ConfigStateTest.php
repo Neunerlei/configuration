@@ -194,23 +194,228 @@ class ConfigStateTest extends TestCase
         ], $i->getAll());
     }
 
-    public function testMerge()
+    public function provideTestMergeData(): array
     {
-        $a = new ConfigState(['foo' => 'bar', 'bar' => 'baz', 'baz' => ['subFoo' => ['subFoo2' => true]]]);
-        $b = new ConfigState(['bar' => 123, 'baz' => ['subFoo' => ['subFoo1' => 'asdf']]]);
-        $c = $a->mergeWith($b);
-        self::assertNotSame($a, $c);
-        self::assertNotSame($b, $c);
-        self::assertEquals([
-            'foo' => 'bar',
-            'bar' => 123,
-            'baz' => [
-                'subFoo' => [
-                    'subFoo1' => 'asdf',
-                    'subFoo2' => true,
+        return [
+            // Default merge
+            [
+                [
+                    'foo'  => 'bar',
+                    'bar'  => 'baz',
+                    'baz'  => [
+                        'subFoo' => [
+                            'subFoo2' => true,
+                        ],
+                    ],
+                    'list' => ['foo', ['bar']],
+                    'set'  => true,
+                ],
+                [
+                    'bar'  => 123,
+                    'baz'  => [
+                        'subFoo' => [
+                            'subFoo1' => 'asdf',
+                        ],
+                    ],
+                    'list' => ['bar', ['baz']],
+                    'set'  => '__UNSET',
+                ],
+                [
+                    'foo'  => 'bar',
+                    'bar'  => 123,
+                    'baz'  => [
+                        'subFoo' => [
+                            'subFoo1' => 'asdf',
+                            'subFoo2' => true,
+                        ],
+                    ],
+                    'list' => ['foo', ['bar'], 'bar', ['baz']],
+                ],
+                [[]],
+            ],
+            // Default without unset
+            [
+                [
+                    'foo' => true,
+                ],
+                [
+                    'foo' => '__UNSET',
+                ],
+                [
+                    'foo' => '__UNSET',
+                ],
+                [
+                    ['allowRemoval' => false],
+                    ['r' => false],
                 ],
             ],
-        ], $c->getAll());
+            // With numeric merge
+            [
+                [
+                    'foo' => ['a', 'b'],
+                    'bar' => [
+                        [
+                            'bar' => ['a'],
+                            'baz' => 2,
+                        ],
+                    ],
+                ],
+                [
+                    'foo' => ['c', 'd'],
+                    'bar' => [
+                        [
+                            'bar' => ['b'],
+                            'foo' => 1,
+                            'faz' => 2,
+                        ],
+                    ],
+                ],
+                [
+                    'foo' => ['a', 'b', 'c', 'd'],
+                    'bar' => [
+                        [
+                            'bar' => ['a', 'b'],
+                            'baz' => 2,
+                            'foo' => 1,
+                            'faz' => 2,
+                        ],
+                    ],
+                ],
+                [
+                    ['numericMerge'],
+                    ['numericMerge' => true],
+                    ['nm'],
+                    ['nm' => true],
+                ],
+            ],
+            // With STRICT numeric merge
+            [
+                [
+                    'foo' => ['a', 'b'],
+                    'bar' => [
+                        [
+                            'bar' => ['a'],
+                            'baz' => 2,
+                        ],
+                    ],
+                ],
+                [
+                    'foo' => ['c', 'd'],
+                    'bar' => [
+                        [
+                            'bar' => ['b'],
+                            'foo' => 1,
+                            'faz' => 2,
+                        ],
+                    ],
+                ],
+                [
+                    'foo' => ['c', 'd'],
+                    'bar' => [
+                        [
+                            'bar' => ['b'],
+                            'baz' => 2,
+                            'foo' => 1,
+                            'faz' => 2,
+                        ],
+                    ],
+                ],
+                [
+                    ['numericMerge', 'strictNumericMerge'],
+                    ['numericMerge', 'strictNumericMerge' => true],
+                    ['numericMerge', 'sn' => true],
+                ],
+            ],
+            // With path specific options
+            [
+                [
+                    'foo' => ['a', 'b', ['foo']],
+                    'bar' => true,
+                    'baz' => [
+                        'foo' => true,
+                        'bar' => true,
+                        'baz' => [
+                            'foo' => true,
+                        ],
+                    ],
+                    'faz' => [
+                        [
+                            'foo' => 'bar',
+                            'bar' => ['a'],
+                        ],
+                    ],
+                ],
+                [
+                    'foo' => ['c', 'd', ['bar']],
+                    'bar' => '__UNSET',
+                    'baz' => [
+                        'foo' => '__UNSET',
+                        'baz' => [
+                            'foo' => '__UNSET',
+                        ],
+                    ],
+                    'faz' => [
+                        [
+                            'foo' => 'baz',
+                            'bar' => ['b'],
+                        ],
+                        [
+                            'foo' => 'bar',
+                        ],
+                    ],
+                ],
+                [
+                    'foo' => ['a', 'b', ['foo', 'bar'], 'c', 'd'],
+                    'baz' => [
+                        'bar' => true,
+                        'baz' => [
+                            'foo' => '__UNSET',
+                        ],
+                    ],
+                    'faz' => [
+                        [
+                            'foo' => 'baz',
+                            'bar' => ['b'],
+                        ],
+                        [
+                            'foo' => 'bar',
+                        ],
+                    ],
+                ],
+                [
+                    [
+                        'nm'           => [
+                            'foo'       => true,
+                            'faz'       => true,
+                            'faz.*.bar' => true,
+                        ],
+                        'sn'           => [
+                            'faz.*.bar' => true,
+                        ],
+                        'allowRemoval' => [
+                            'bar'     => true,
+                            'baz'     => true,
+                            'baz.baz' => false,
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider provideTestMergeData
+     */
+    public function testMerge($a, $b, $expected, $optionSets)
+    {
+        $aState = new ConfigState($a);
+        $bState = new ConfigState($b);
+        foreach ($optionSets as $k => $options) {
+            $cState = $aState->mergeWith($bState, $options);
+            self::assertNotSame($aState, $cState, 'Assertion failed with option set: ' . $k);
+            self::assertNotSame($bState, $cState, 'Assertion failed with option set: ' . $k);
+            self::assertEquals($expected, $cState->getAll(), 'Assertion failed with option set: ' . $k);
+        }
     }
 
     public function testWatcherSimple()

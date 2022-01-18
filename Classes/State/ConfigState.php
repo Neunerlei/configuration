@@ -289,30 +289,54 @@ class ConfigState
      * with the combined state of both objects. The merge is performed recursively on arrays.
      * The given $state wins by default if a key exists in both and does not contain an array.
      *
-     * @param   \Neunerlei\Configuration\State\ConfigState  $state  The state to be merged into this state object
+     * @param   ConfigState  $state    The state to be merged into this state object
+     * @param   array        $options  A list of options that define the merge strategy
+     *                                 each option can be either BOOL for a global setting, or an array of state paths
+     *                                 and their matching option like: ['foo.bar.baz' => true, 'foo.*.foo' => false,
+     *                                 ...]. the "*" is used as a wildcard, when defining paths. All options have
+     *                                 "short-keys" to save on typing:
+     *                                 - numericMerge|nm (FALSE): By default, array values of $b, with numeric keys
+     *                                 will be appended to the array in $a, in the same way array_merge() works. To
+     *                                 enable the overriding of values with numeric keys set this to true.
+     *                                 - strictNumericMerge|sn (FALSE): If the "numericMerge" is true, only arrays with
+     *                                 numeric keys are merged into each other. By setting this flag, values of ALL
+     *                                 types with the same numeric key will get overwritten by the value in $b.
+     *                                 - allowRemoval|r (TRUE): If true, the value "__UNSET" feature, which can be used
+     *                                 in order to unset array keys in the original array, will be disabled.
      *
      * @return \Neunerlei\Configuration\State\ConfigState
      */
-    public function mergeWith(ConfigState $state): self
+    public function mergeWith(ConfigState $state, array $options = []): self
     {
-        $clone = clone $this;
-
-        return $clone->importFrom($state);
+        return (clone $this)->importFrom($state, $options);
     }
 
     /**
      * Quite similar to mergeWith() but imports the state of the given configuration into THIS instance,
      * instead of creating a new instance.
      *
-     * @param   \Neunerlei\Configuration\State\ConfigState  $state
+     * @param   ConfigState  $state    The state to be merged into this state object
+     * @param   array        $options  A list of options that define the merge strategy
+     *                                 each option can be either BOOL for a global setting, or an array of state paths
+     *                                 and their matching option like: ['foo.bar.baz' => true, 'foo.*.foo' => false,
+     *                                 ...]. the "*" is used as a wildcard, when defining paths. All options have
+     *                                 "short-keys" to save on typing:
+     *                                 - numericMerge|nm (FALSE): By default, array values of $b, with numeric keys
+     *                                 will be appended to the array in $a, in the same way array_merge() works. To
+     *                                 enable the overriding of values with numeric keys set this to true.
+     *                                 - strictNumericMerge|sn (FALSE): If the "numericMerge" is true, only arrays with
+     *                                 numeric keys are merged into each other. By setting this flag, values of ALL
+     *                                 types with the same numeric key will get overwritten by the value in $b.
+     *                                 - allowRemoval|r (TRUE): If true, the value "__UNSET" feature, which can be used
+     *                                 in order to unset array keys in the original array, will be disabled.
      *
      * @return $this
      */
-    public function importFrom(ConfigState $state): self
+    public function importFrom(ConfigState $state, array $options = []): self
     {
         $this->watchers = Arrays::merge($this->watchers, $state->watchers, 'nn');
-        $this->handleWatchers(function () use ($state) {
-            $this->state = ArraysWatchable::mergeStates($this->state, $state->getAll());
+        $this->handleWatchers(function () use ($state, $options) {
+            $this->state = ArraysWatchable::mergeStates($this->state, $state->getAll(), $options);
         });
 
         return $this;

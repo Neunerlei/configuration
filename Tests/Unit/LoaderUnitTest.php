@@ -51,29 +51,29 @@ class LoaderUnitTest extends TestCase
 {
     use TestHelperTrait;
     use LoaderTestTrait;
-    
+
     public function testEnvAndType(): void
     {
         $loader = $this->makeEmptyLoaderInstance();
         $this->assertEquals('testCase', $loader->getType());
         $loader->setType('fooType');
         $this->assertEquals('fooType', $loader->getType());
-        
+
         $this->assertEquals('test', $loader->getEnvironment());
         $loader->setEnvironment('fooEnv');
         $this->assertEquals('fooEnv', $loader->getEnvironment());
-        
+
         $context = $this->getLoaderContext($loader);
         $this->assertEquals('fooType', $context->type);
         $this->assertEquals('fooEnv', $context->environment);
     }
-    
+
     public function testRootLocationsWithNamespaces(): void
     {
         $loader = $this->makeEmptyLoaderInstance();
         $this->registerExampleRootLocations($loader);
         $context = $this->getLoaderContext($loader);
-        
+
         $actual = [];
         $this->assertEquals(5, iterator_count($context->rootLocations));
         $count = 0;
@@ -82,7 +82,7 @@ class LoaderUnitTest extends TestCase
             // We have to set a class here, but as we use it in our generator, we can pass a foo value here
             $actual[$location->getPathname()] = $location->getNamespace((string)($count++));
         }
-        
+
         $examplePath = $this->getExamplePath();
         $this->assertEquals([
             $examplePath . 'Plugins/plugin1' => 'Plugin1',
@@ -90,13 +90,13 @@ class LoaderUnitTest extends TestCase
             $examplePath . 'Plugins/plugin3' => 'Plugin3',
             $examplePath . 'Project'         => 'project',
             rtrim($examplePath, '/')         => 'namespace-' . rtrim($examplePath, '/'),
-        
+
         ], $actual);
-        
+
         $loader->clearRootLocations();
         $this->assertEquals(0, iterator_count($context->rootLocations));
     }
-    
+
     public function testRegisterHandlerLocationOrHandler(): void
     {
         $loader      = $this->makeEmptyLoaderInstance();
@@ -106,18 +106,18 @@ class LoaderUnitTest extends TestCase
         $it = new GlobIterator($this->getExamplePath() . '*/Handler/**');
         $loader->registerHandlerLocation($it);
         $context = $this->getLoaderContext($loader);
-        
+
         $this->assertEquals([$handlerMock], $context->handlers);
-        
+
         $loader->clearHandlers();
         $this->assertEquals([], $context->handlers);
-        
+
         $this->assertEquals(['foo', $it], $context->handlerLocations);
-        
+
         $loader->clearHandlerLocations();
         $this->assertEquals([], $context->handlerLocations);
     }
-    
+
     public function testSetContextClass(): void
     {
         $loader  = $this->makeEmptyLoaderInstance();
@@ -126,7 +126,7 @@ class LoaderUnitTest extends TestCase
         $loader->setConfigContextClass(FixtureTestContext::class);
         $this->assertEquals(FixtureTestContext::class, $context->configContextClass);
     }
-    
+
     public function provideTestSetContextClassFailuresData(): array
     {
         return [
@@ -134,7 +134,7 @@ class LoaderUnitTest extends TestCase
             [''],
         ];
     }
-    
+
     /**
      * @param $class
      *
@@ -146,7 +146,7 @@ class LoaderUnitTest extends TestCase
         $loader = $this->makeEmptyLoaderInstance();
         $loader->setConfigContextClass($class);
     }
-    
+
     public function provideTestSetDependencyInstanceData(): array
     {
         return [
@@ -187,7 +187,7 @@ class LoaderUnitTest extends TestCase
             ],
         ];
     }
-    
+
     /**
      * @param   string    $setter
      * @param   string    $property
@@ -200,43 +200,43 @@ class LoaderUnitTest extends TestCase
         $loader  = $this->makeEmptyLoaderInstance();
         $context = $this->getLoaderContext($loader);
         $this->assertNull($context->$property);
-        
+
         $instance = $creator();
         $loader->$setter($instance);
         $this->assertSame($instance, $context->$property);
-        
+
         $loader->$setter(null);
         $this->assertNull($context->$property);
     }
-    
+
     public function testModifierRegistration(): void
     {
         $loader  = $this->makeEmptyLoaderInstance();
         $context = $this->getLoaderContext($loader);
-        
+
         $this->assertEquals([
             ($m = new ConfigOrderModifier())->getKey()   => $m,
             ($m = new ConfigReplaceModifier())->getKey() => $m,
         ], $context->modifiers);
-        
+
         $mock = $this->getMockBuilder(ConfigModifierInterface::class)
                      ->getMockForAbstractClass();
         $mock->method('getKey')->willReturn('mockModifier');
         $loader->registerModifier($mock);
-        
+
         // Override the modifier
         $mock2 = $this->getMockBuilder(ConfigModifierInterface::class)
                       ->getMockForAbstractClass();
         $mock2->method('getKey')->willReturn('mockModifier');
         $loader->registerModifier($mock);
-        
+
         $this->assertEquals([
             ($m = new ConfigOrderModifier())->getKey()   => $m,
             ($m = new ConfigReplaceModifier())->getKey() => $m,
             'mockModifier'                               => $mock2,
         ], $context->modifiers);
     }
-    
+
     public function testMakeCacheKey(): void
     {
         $loader  = $this->makeEmptyLoaderInstance();
@@ -244,13 +244,13 @@ class LoaderUnitTest extends TestCase
         $caller  = $this->makeCaller($loader, 'makeCacheKey');
         $this->assertEquals('configuration-testCase-test', $caller($context, false));
         $this->assertEquals('configuration-testCase-test-runtimeDefinitions', $caller($context, true));
-        
+
         $loader->setEnvironment('foo');
         $loader->setType('fooType');
         $this->assertEquals('configuration-fooType-foo', $caller($context, false));
         $this->assertEquals('configuration-fooType-foo-runtimeDefinitions', $caller($context, true));
     }
-    
+
     public function testMakeConfigContext(): void
     {
         $loader                      = $this->makeEmptyLoaderInstance();
@@ -259,11 +259,11 @@ class LoaderUnitTest extends TestCase
         $caller                      = $this->makeCaller($loader, 'makeConfigContext');
         $state                       = new ConfigState([]);
         $configContext               = $caller($context, $state);
-        
+
         $this->assertInstanceOf(FixtureTestContext::class, $configContext);
         $this->assertTrue($configContext->isInitialized);
     }
-    
+
     public function provideTestFinderCreationData(): array
     {
         return [
@@ -297,7 +297,7 @@ class LoaderUnitTest extends TestCase
             ],
         ];
     }
-    
+
     /**
      * @param   string  $method
      * @param   string  $property
@@ -316,22 +316,45 @@ class LoaderUnitTest extends TestCase
     ): void {
         $loader                   = $this->makeEmptyLoaderInstance();
         $context                  = $this->getLoaderContext($loader);
-        $context->eventDispatcher = new class implements EventDispatcherInterface
-        {
+        $context->eventDispatcher = new class implements EventDispatcherInterface {
             public $dispatchedEvent;
-            
+
             public function dispatch(object $event)
             {
                 $this->dispatchedEvent = $event;
             }
         };
-        
+
         $context->$property = $propertyVal;
         $caller             = $this->makeCaller($loader, $method);
         $instance           = $caller($context);
         $this->assertInstanceOf($expectedInstanceClass, $instance);
         $this->assertInstanceOf($expectedEventClass, $context->eventDispatcher->dispatchedEvent);
-        
+
     }
-    
+
+    public function testCacheMergeOptions(): void
+    {
+        $state = new ConfigState(['foo' => ['a', 'b']]);
+
+        $loader = $this->makeEmptyLoaderInstance();
+        $loader->setCache(new ExampleCacheImplementation(false));
+
+        static::assertEquals(['foo' => ['a', 'b']], $loader->load(false, clone $state)->getAll());
+        // Yeah, this is weired, but happens when a cached value gets re-merged with the current state
+        // however, this is the default behaviour, and so we need to test it here...
+        // @todo in the next major version, Arrays::merge options should be set by default...
+        static::assertEquals(['foo' => ['a', 'b', 'a', 'b']], $loader->load(false, clone $state)->getAll());
+
+        // Now with a bit more sanity...
+        $loader->setCache(new ExampleCacheImplementation(false));
+        $loader->setCacheMergeOptions([
+            // Enable numeric merging and allow numeric merging for the 'foo' sub-node
+            'numericMerge'       => true,
+            'strictNumericMerge' => ['foo' => true],
+        ]);
+
+        static::assertEquals(['foo' => ['a', 'b']], $loader->load(false, clone $state)->getAll());
+        static::assertEquals(['foo' => ['a', 'b']], $loader->load(false, clone $state)->getAll());
+    }
 }
