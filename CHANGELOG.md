@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.7.0](https://github.com/Neunerlei/configuration/compare/v2.6.1...v2.7.0) (2022-01-18)
+
+
+### Features
+
+* **ConfigState:** allow options when merging config states into each other ([2baf171](https://github.com/Neunerlei/configuration/commit/2baf1717d0fc35cf7b0adc2f452fc2a2b40d1887))
+
 ### [2.6.1](https://github.com/Neunerlei/configuration/compare/v2.6.0...v2.6.1) (2021-11-24)
 
 
