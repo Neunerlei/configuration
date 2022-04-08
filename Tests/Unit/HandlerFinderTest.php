@@ -175,6 +175,18 @@ class HandlerFinderTest extends TestCase
         $finder->find($context);
     }
 
+    public function testEdgeCaseWhenGlobIteratorIsUsedThatCanBreakClassFileLocator(): void
+    {
+        $loader = $this->makeTestLoader();
+        $loader->clearHandlerLocations();
+        $loader->registerHandlerLocation($this->getFixturePath(__CLASS__) . 'AbsolutePath/**');
+
+        $context = $this->getLoaderContext($loader);
+        $finder  = new HandlerFinder();
+
+        static::assertEquals([FixtureAbsoluteTestHandler::class], array_keys($finder->find($context)));
+    }
+
     protected function makeTestLoader(): Loader
     {
         $basePath = $this->getFixturePath(__CLASS__);

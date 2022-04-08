@@ -123,6 +123,7 @@ class AlphabeticalRecursiveFilesystemIterator extends FilesystemIterator impleme
         if (method_exists($this->wrappedIterator, 'setInfoClass')) {
             $this->wrappedIterator->setInfoClass($class_name);
         }
+        unset($this->innerIterator);
     }
 
     /**
