@@ -42,5 +42,10 @@
             "Neunerlei\\ConfigTests\\": "Tests"
         }
     },
-    "version": "2.6.1"
+    "version": "2.6.1",
+    "config": {
+        "allow-plugins": {
+            "0.0.0/composer-include-files": true
+        }
+    }
 }
