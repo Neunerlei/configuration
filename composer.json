@@ -44,6 +44,10 @@
     },
     "version": "2.6.1",
     "config": {
+        "platform": {
+            "php": "7.3"
+        },
+        "sort-packages": true,
         "allow-plugins": {
             "0.0.0/composer-include-files": true
         }
