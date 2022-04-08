@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.8.0](https://github.com/Neunerlei/configuration/compare/v2.7.0...v2.8.0) (2022-04-08)
+
+
+### Features
+
+* update dependencies ([79c6c93](https://github.com/Neunerlei/configuration/commit/79c6c93b74059ffd20defba420c897db9a649bc8))
+
+
+### Bug Fixes
+
+* downgrade psr/container to support PHP73 ([e89ddb1](https://github.com/Neunerlei/configuration/commit/e89ddb10430bd783101a8bc506898ca816f78957))
+
 ## [2.7.0](https://github.com/Neunerlei/configuration/compare/v2.6.1...v2.7.0) (2022-01-18)
 
 
