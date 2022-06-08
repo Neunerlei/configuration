@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.8.1](https://github.com/Neunerlei/configuration/compare/v2.8.0...v2.8.1) (2022-04-08)
+
+
+### Bug Fixes
+
+* **util:** fix issue when a file was the first part of a wrapped iterator ([f955df5](https://github.com/Neunerlei/configuration/commit/f955df54e8432c65fc5eaa008b784c937a203a01))
+
 ## [2.8.0](https://github.com/Neunerlei/configuration/compare/v2.7.0...v2.8.0) (2022-04-08)
 
 
