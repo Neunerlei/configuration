@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Getting started | Configuration</title>
+    <meta name="generator" content="VuePress 1.8.2">
+    
+    <meta name="description" content="">
+    
+    <link rel="preload" href="/assets/css/0.styles.e4d8b86b.css" as="style"><link rel="preload" href="/assets/js/app.2fe2820e.js" as="script"><link rel="preload" href="/assets/js/2.7a33be8c.js" as="script"><link rel="preload" href="/assets/js/9.ef748947.js" as="script"><link rel="prefetch" href="/assets/js/3.ea20158e.js"><link rel="prefetch" href="/assets/js/4.b4c91b0e.js"><link rel="prefetch" href="/assets/js/5.0969e098.js"><link rel="prefetch" href="/assets/js/6.e4c8cbb1.js"><link rel="prefetch" href="/assets/js/7.e5302579.js"><link rel="prefetch" href="/assets/js/8.8810ae2b.js">
+    <link rel="stylesheet" href="/assets/css/0.styles.e4d8b86b.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container"><header class="navbar"><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/" class="home-link router-link-active"><!----> <span class="site-name">Configuration</span></a> <div class="links"><div class="search-box"><input aria-label="Search" autocomplete="off" spellcheck="false" value=""> <!----></div> <!----></div></header> <div class="sidebar-mask"></div> <aside class="sidebar"><!---->  <ul class="sidebar-links"><li><a href="/" aria-current="page" class="sidebar-link">Configuration - a different approach</a></li><li><a href="/guide/GettingStarted.html" aria-current="page" class="active sidebar-link">Getting started</a><ul class="sidebar-sub-headers"><li class="sidebar-sub-header"><a href="/guide/GettingStarted.html#root-locations" class="sidebar-link">Root locations</a></li><li class="sidebar-sub-header"><a href="/guide/GettingStarted.html#basic-setup" class="sidebar-link">Basic setup</a></li><li class="sidebar-sub-header"><a href="/guide/GettingStarted.html#creating-your-first-handler" class="sidebar-link">Creating your first handler</a></li><li class="sidebar-sub-header"><a href="/guide/GettingStarted.html#configurator" class="sidebar-link">Configurator</a></li><li class="sidebar-sub-header"><a href="/guide/GettingStarted.html#configurable-interface" class="sidebar-link">Configurable interface</a></li><li class="sidebar-sub-header"><a href="/guide/GettingStarted.html#writing-a-configuration-class" class="sidebar-link">Writing a configuration class</a></li></ul></li><li><a href="/guide/ConfigState.html" class="sidebar-link">Config State</a></li></ul> </aside> <main class="page"> <div class="theme-default-content content__default"><h1 id="getting-started"><a href="#getting-started" class="header-anchor">#</a> Getting started</h1> <p>I tried to make the library as versatile as possible while keeping it as simple as possible.
+You can always take a look into the &quot;Example&quot; directory in the repository to get an overview over all options in action.</p> <h2 id="root-locations"><a href="#root-locations" class="header-anchor">#</a> Root locations</h2> <p>This package is designed to work either in combination or as a standalone plugin system.
+Sadly, this means we have to crunch a bit of boring theory before we can start with setting everything up.
+In your project you will probably have a directory called &quot;plugins&quot; (or something similar), where
+all your plugins reside (presumably each in their own directory). In that case
+your directory structure might look like this:</p> <div class="language- extra-class"><pre class="language-text"><code>- src
+  - Classes
+    - ... [project classes]
+  - Config
+    - ... [project config]
+  - Plugins
+    - Plugin1
+        - Config
+            - ... [config classes]
+        - Handlers
+            - ... [handler classes]
+        - ... [plugin sources]
+    - Plugin2
+        - Config
+            - ... [config classes]
+        - Handlers
+            - ... [handler classes]
+        - ... [plugin sources]
+</code></pre></div><p>The directory where the plugin sources are stored (/src/Plugins/Plugin1 and /src/Plugins/Plugin2),
+are the so called &quot;RootLocations&quot;. Those folders should be traversed by the configuration loader
+to find the available configuration classes.</p> <p>::: info
+Note, that we did not define a /Config directory but simply use the base plugin directory.
+It will become clear why we do this in the &quot;handlers&quot; section.
+:::</p> <p>Another example for a root location is the configuration of the project itself,
+this is where you or your user will be able to configure installed plugins or framework options.
+To achieve the project configuration we have to register an additional root location at /src.</p> <p>This means we have currently three root locations to register:</p> <ul><li>/src/Plugins/Plugin1</li> <li>/src/Plugins/Plugin2</li> <li>/src</li></ul> <div class="custom-block tip"><p class="custom-block-title">TIP</p> <p>The order is important here, because that means that the config of both plugins will be loaded before the app config is loaded.</p></div> <p>So far, so good? Now lets jump into the action.</p> <h2 id="basic-setup"><a href="#basic-setup" class="header-anchor">#</a> Basic setup</h2> <p>First of all include the composer autoloader (if not done by your framework/app already):</p> <div class="language-php extra-class"><pre class="language-php"><code><span class="token php language-php"><span class="token delimiter important">&lt;?php</span>
+<span class="token keyword">include</span> <span class="token constant">__DIR__</span> <span class="token operator">.</span> <span class="token string single-quoted-string">'/vendor/autoload.php'</span><span class="token punctuation">;</span>
+</span></code></pre></div><p>Now let's create the configuration loader instance.
+The configuration loader is the repository to load the configuration.</p> <p>It requires two arguments:</p> <ul><li>$type: A unique type key for this configuration, so we don't
+create an overlap when different configurations are loaded.</li> <li>$environment Something like &quot;dev&quot;/&quot;prod&quot;/&quot;stage&quot; or similar to
+describe your current environment.</li></ul> <div class="language-php extra-class"><pre class="language-php"><code><span class="token php language-php"><span class="token delimiter important">&lt;?php</span>
+<span class="token keyword">use</span> <span class="token package">Neunerlei<span class="token punctuation">\</span>Configuration<span class="token punctuation">\</span>Loader<span class="token punctuation">\</span>Loader</span><span class="token punctuation">;</span>
+<span class="token variable">$loader</span> <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Loader</span><span class="token punctuation">(</span><span class="token string single-quoted-string">'test'</span><span class="token punctuation">,</span> <span class="token string single-quoted-string">'dev'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</span></code></pre></div><p>Next up we have to tell the loader where its root locations are.</p> <div class="language-php extra-class"><pre class="language-php"><code><span class="token php language-php"><span class="token delimiter important">&lt;?php</span>
+<span class="token comment">/** @var \Neunerlei\Configuration\Loader\Loader $loader */</span>
+
+<span class="token comment">// Register all plugin directories using a glob</span>
+<span class="token variable">$loader</span><span class="token operator">-&gt;</span><span class="token function">registerRootLocation</span><span class="token punctuation">(</span><span class="token string single-quoted-string">'/src/Plugins/*'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// Register the project root directory</span>
+<span class="token variable">$loader</span><span class="token operator">-&gt;</span><span class="token function">registerRootLocation</span><span class="token punctuation">(</span><span class="token string single-quoted-string">'/src'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</span></code></pre></div><p>Now, as a last step, we have to tell the loader, where it can find handler classes.
+Following our example, we have to look inside the &quot;Handler&quot; directory of each plugin folder in order to find handlers,
+and so it's as simple as that:</p> <div class="language-php extra-class"><pre class="language-php"><code><span class="token php language-php"><span class="token delimiter important">&lt;?php</span>
+<span class="token comment">/** @var \Neunerlei\Configuration\Loader\Loader $loader */</span>
+
+<span class="token comment">// Relative paths will be resolved, relative to all root locations.</span>
+<span class="token variable">$loader</span><span class="token operator">-&gt;</span><span class="token function">registerHandlerLocation</span><span class="token punctuation">(</span><span class="token string single-quoted-string">'Handlers'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</span></code></pre></div><p>Finally, we load the configuration:</p> <div class="language-php extra-class"><pre class="language-php"><code><span class="token php language-php"><span class="token delimiter important">&lt;?php</span>
+<span class="token comment">/** @var \Neunerlei\Configuration\Loader\Loader $loader */</span>
+<span class="token variable">$state</span> <span class="token operator">=</span> <span class="token variable">$loader</span><span class="token operator">-&gt;</span><span class="token function">load</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">print_r</span><span class="token punctuation">(</span><span class="token variable">$state</span><span class="token operator">-&gt;</span><span class="token function">getAll</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</span></code></pre></div><div class="custom-block tip"><p class="custom-block-title">TIP</p> <p>After your configuration has been loaded from your configuration class the result will be an object of type:
+<code>\Neunerlei\Configuration\State\ConfigState</code> which contains the combined information from all plugins and your project
+configuration. You can use its get() and set() methods to retrieve or update the data to your liking.
+In its core, the state object is a multi-dimensional array which allows you to store any kind of data.</p></div> <p>Well, that's that, but now what? The result of the print_r will be an empty array. This isn't helpful, isn't it?
+To get a more sensible output, we have to create a handler first, and a configuration class after that.</p> <h2 id="creating-your-first-handler"><a href="#creating-your-first-handler" class="header-anchor">#</a> Creating your first handler</h2> <p>A handler is the class which tells the configuration loader which type of classes it can process and where
+to look for them, inside your root locations. It is also used to pass the configurator through all found
+configuration classes and push the gathered information into the ConfigState object, when done.</p> <p>Before you can begin configuring your code you have to create a handler class, and a matching configurable interface.
+Let's assume we want to create a config handler for Plugin1 in our example above.
+So we create a new class inside the /src/Plugins/Plugin1/Handlers directory and call it: &quot;ConfigureTestHandler&quot;.</p> <div class="language-php extra-class"><pre class="language-php"><code><span class="token php language-php"><span class="token delimiter important">&lt;?php</span>
+<span class="token keyword">namespace</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Handlers</span><span class="token punctuation">;</span>
+<span class="token keyword">class</span> <span class="token class-name-definition class-name">ConfigureTestHandler</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+</span></code></pre></div><p>A handler has to either implement the <code>Neunerlei\Configuration\Handler\ConfigHandlerInterface</code> interface,
+or extend the <code>Neunerlei\Configuration\Handler\AbstractConfigHandler</code> class. I would always use the second option.
+So let's extend the handler and add the stubs for the required methods of the interface:</p> <div class="language-php extra-class"><pre class="language-php"><code><span class="token php language-php"><span class="token delimiter important">&lt;?php</span>
+<span class="token keyword">namespace</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Handlers</span><span class="token punctuation">;</span>
+
+<span class="token keyword">use</span> <span class="token package">Neunerlei<span class="token punctuation">\</span>Configuration<span class="token punctuation">\</span>Handler<span class="token punctuation">\</span>AbstractConfigHandler</span><span class="token punctuation">;</span>
+<span class="token keyword">use</span> <span class="token package">Neunerlei<span class="token punctuation">\</span>Configuration<span class="token punctuation">\</span>Handler<span class="token punctuation">\</span>HandlerConfigurator</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name-definition class-name">ConfigureTestHandler</span> <span class="token keyword">extends</span> <span class="token class-name">AbstractConfigHandler</span><span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">function</span> <span class="token function-definition function">configure</span><span class="token punctuation">(</span><span class="token class-name type-declaration">HandlerConfigurator</span> <span class="token variable">$configurator</span><span class="token punctuation">)</span> <span class="token punctuation">:</span> <span class="token keyword return-type">void</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+    <span class="token keyword">public</span> <span class="token keyword">function</span> <span class="token function-definition function">prepare</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">:</span> <span class="token keyword return-type">void</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+    <span class="token keyword">public</span> <span class="token keyword">function</span> <span class="token function-definition function">handle</span><span class="token punctuation">(</span><span class="token keyword type-hint">string</span> <span class="token variable">$class</span><span class="token punctuation">)</span> <span class="token punctuation">:</span> <span class="token keyword return-type">void</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+    <span class="token keyword">public</span> <span class="token keyword">function</span> <span class="token function-definition function">finish</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">:</span> <span class="token keyword return-type">void</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</span></code></pre></div><p>As you can see, there are four methods that have to be implemented by a handler. Before we look at those
+methods in detail, we create our configurator and configurable interface.</p> <div class="custom-block tip"><p class="custom-block-title">Context</p> <p>You may use the $this-&gt;context property in your handler, to get the state or runtime information,
+which will be automatically injected into your instance.</p></div> <h2 id="configurator"><a href="#configurator" class="header-anchor">#</a> Configurator</h2> <p>A configurator is optional while writing a handler, but highly recommended. The configurator object is, in general
+the speaking API which will be passed through configuration classes and is used to gather the data. The main
+reason to create a configurator is, to tell the world what can be configured and how,
+because the configuration implementation is, completely agnostic to the type of data you create with it.</p> <p>This approach allows you to gather information from multiple plugins and process them after all data has been
+gathered. It also serves as an auto-complete friendly setter for the ConfigState object, if you don't require
+additional processing for your configuration.</p> <p>A configurator class can be complex, or as simple as the following example:</p> <div class="language-php extra-class"><pre class="language-php"><code><span class="token php language-php"><span class="token delimiter important">&lt;?php</span>
+
+<span class="token keyword">namespace</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Handlers</span><span class="token punctuation">;</span>
+
+<span class="token keyword">use</span> <span class="token package">Neunerlei<span class="token punctuation">\</span>Configuration<span class="token punctuation">\</span>State<span class="token punctuation">\</span>ConfigState</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name-definition class-name">ConfigureTestConfigurator</span> <span class="token punctuation">{</span>
+
+    <span class="token comment">/**
+     * A generic config option
+     * @var string $myOption
+     */</span>
+    <span class="token keyword">protected</span> <span class="token variable">$myOption</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/**
+     * Sets a generic config option
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">function</span> <span class="token function-definition function">setMyOption</span><span class="token punctuation">(</span><span class="token keyword type-hint">string</span> <span class="token variable">$myOption</span><span class="token punctuation">)</span><span class="token punctuation">:</span> <span class="token keyword return-type">self</span> <span class="token punctuation">{</span>
+        <span class="token variable">$this</span><span class="token operator">-&gt;</span><span class="token property">myOption</span> <span class="token operator">=</span> <span class="token variable">$myOption</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token variable">$this</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">/**
+     * This method is optional, we will use it in our handler
+     * to extract the collected data of this configurator after all
+     * configuration classes have been processed. This pattern allows you to &quot;post-process&quot; the
+     * data before it is set to the state.
+     *
+     * Note: If you don't want or need that extra layer of processing,
+     * you can also set the data directly to the state in your setter methods.
+     *
+     * @see \Neunerlei\Configuration\Util\ConfigContextAwareInterface
+     * @see \Neunerlei\Configuration\Util\ConfigContextAwareTrait
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">function</span> <span class="token function-definition function">finish</span><span class="token punctuation">(</span><span class="token class-name type-declaration">ConfigState</span> <span class="token variable">$state</span><span class="token punctuation">)</span><span class="token punctuation">:</span> <span class="token keyword return-type">void</span>
+    <span class="token punctuation">{</span>
+        <span class="token variable">$state</span><span class="token operator">-&gt;</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token string single-quoted-string">'myOption'</span><span class="token punctuation">,</span> <span class="token variable">$this</span><span class="token operator">-&gt;</span><span class="token property">myOption</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</span></code></pre></div><h3 id="alternative-configurator-architecture"><a href="#alternative-configurator-architecture" class="header-anchor">#</a> Alternative configurator architecture</h3> <p>Alternatively, in this example you could go the easy route of directly setting the state data.
+However, in my experience this is not your normal use case, hence I wanted to show you how to manage bigger configurations from the beginning.
+For completeness, this would be the alternative in the simple setup above:</p> <div class="language-php extra-class"><pre class="language-php"><code><span class="token php language-php"><span class="token delimiter important">&lt;?php</span>
+
+<span class="token keyword">namespace</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Handlers</span><span class="token punctuation">;</span>
+
+<span class="token keyword">use</span> <span class="token package">Neunerlei<span class="token punctuation">\</span>Configuration<span class="token punctuation">\</span>Util<span class="token punctuation">\</span>ConfigContextAwareInterface</span><span class="token punctuation">;</span>
+<span class="token keyword">use</span> <span class="token package">Neunerlei<span class="token punctuation">\</span>Configuration<span class="token punctuation">\</span>Util<span class="token punctuation">\</span>ConfigContextAwareTrait</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name-definition class-name">ConfigureTestConfigurator</span> <span class="token keyword">implements</span> <span class="token class-name">ConfigContextAwareInterface</span> <span class="token punctuation">{</span>
+
+    <span class="token keyword">use</span> <span class="token package">ConfigContextAwareTrait</span><span class="token punctuation">;</span>
+
+    <span class="token comment">/**
+     * Sets a generic config option
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">function</span> <span class="token function-definition function">setMyOption</span><span class="token punctuation">(</span><span class="token keyword type-hint">string</span> <span class="token variable">$myOption</span><span class="token punctuation">)</span><span class="token punctuation">:</span> <span class="token keyword return-type">self</span> <span class="token punctuation">{</span>
+        <span class="token variable">$this</span><span class="token operator">-&gt;</span><span class="token property">context</span><span class="token operator">-&gt;</span><span class="token function">getState</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-&gt;</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token string single-quoted-string">'myOption'</span><span class="token punctuation">,</span> <span class="token variable">$myOption</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token variable">$this</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</span></code></pre></div><div class="custom-block tip"><p class="custom-block-title">TIP</p> <p>If you implement the ConfigContextAwareInterface for a class, the internal dependency injection handler
+will make sure to provide the config context when a new instance is created.</p></div> <h2 id="configurable-interface"><a href="#configurable-interface" class="header-anchor">#</a> Configurable interface</h2> <p>To map a certain configuration class to a handler object the handler defines one, or multiple interfaces
+it can process. All classes with the registered interfaces will be processed by the handler.
+If multiple handlers can process the same interface, the configuration class will be handled by all of them.</p> <div class="custom-block tip"><p class="custom-block-title">TIP</p> <p>In order to make configurable interfaces easy to find you should start their name with &quot;Configure...&quot; and then
+write WHAT the interface allows you to configure. (e.g ConfigureHttpInterface, ConfigureMiddlewaresInterface,...).</p></div> <p>A simple, but common interface looks like this:</p> <div class="language-php extra-class"><pre class="language-php"><code><span class="token php language-php"><span class="token delimiter important">&lt;?php</span>
+<span class="token keyword">namespace</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Handlers</span><span class="token punctuation">;</span>
+
+<span class="token keyword">interface</span> <span class="token class-name-definition class-name">ConfigureTestInterface</span> <span class="token punctuation">{</span>
+
+    <span class="token comment">/**
+     * Configures some part of your application
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">function</span> <span class="token function-definition function">configure</span><span class="token punctuation">(</span><span class="token class-name type-declaration">ConfigureTestConfigurator</span> <span class="token variable">$configurator</span><span class="token punctuation">)</span><span class="token punctuation">:</span> <span class="token keyword return-type">void</span><span class="token punctuation">;</span>
+
+<span class="token punctuation">}</span>
+</span></code></pre></div><p>As you can see, the interface only defines a single method called &quot;configure()&quot;. The method will receive
+the configurator instance. Every configuration class has to implement this interface, and therefore
+can inherit the &quot;configure()&quot; method, including the auto-completion type hint for your configurator object.</p> <div class="custom-block tip"><p class="custom-block-title">TIP</p> <p>It's up to you, and your requirements on how the interface should look like.
+Your handler decides what you want to do with the information, that was collected by the configurator,
+the configurable interface only tells the user what they can expect from them.</p></div> <p>But, before we get ahead of ourselves, let's take a look at the methods in a handler class:</p> <h3 id="configure"><a href="#configure" class="header-anchor">#</a> configure()</h3> <p>The configure() method is used to tell the config loader about your handler. It allows your handler to provide
+information about where it finds its contents, on which interfaces it listens,
+or the order in which it should be executed. It is called once, when the loader gathers the handler information.</p> <p>You can use the given $configurator to tell the loader that our handler should look inside the &quot;Config&quot; directory,
+relative to the registered root locations in order to find its configuration classes. We also tell the loader,
+it should find only configurations which implement the <code>Example\Plugins\Plugin1\Handlers\ConfigureTestInterface</code>
+interface for this handler.</p> <div class="language-php extra-class"><pre class="language-php"><code><span class="token php language-php"><span class="token delimiter important">&lt;?</span>php<span class="token comment">/** @noinspection ALL */</span>
+<span class="token keyword">namespace</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Handlers</span><span class="token punctuation">;</span>
+
+<span class="token keyword">use</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Handlers<span class="token punctuation">\</span>ConfigureTestInterface</span><span class="token punctuation">;</span>
+<span class="token keyword">use</span> <span class="token package">Neunerlei<span class="token punctuation">\</span>Configuration<span class="token punctuation">\</span>Handler<span class="token punctuation">\</span>AbstractConfigHandler</span><span class="token punctuation">;</span>
+<span class="token keyword">use</span> <span class="token package">Neunerlei<span class="token punctuation">\</span>Configuration<span class="token punctuation">\</span>Handler<span class="token punctuation">\</span>HandlerConfigurator</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name-definition class-name">ConfigureTestHandler</span> <span class="token keyword">extends</span> <span class="token class-name">AbstractConfigHandler</span><span class="token punctuation">{</span>
+    <span class="token keyword">public</span> <span class="token keyword">function</span> <span class="token function-definition function">configure</span><span class="token punctuation">(</span><span class="token class-name type-declaration">HandlerConfigurator</span> <span class="token variable">$configurator</span><span class="token punctuation">)</span> <span class="token punctuation">:</span> <span class="token keyword return-type">void</span> <span class="token punctuation">{</span>
+        <span class="token comment">// Tell the loader to look inside the &quot;Config&quot; directory of each registered root location.</span>
+        <span class="token variable">$configurator</span><span class="token operator">-&gt;</span><span class="token function">registerLocation</span><span class="token punctuation">(</span><span class="token string single-quoted-string">'Config'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// Tell the loader for which interface it should look there.</span>
+        <span class="token variable">$configurator</span><span class="token operator">-&gt;</span><span class="token function">registerInterface</span><span class="token punctuation">(</span><span class="token class-name static-context">ConfigureTestInterface</span><span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// ... other methods</span>
+<span class="token punctuation">}</span>
+</span></code></pre></div><h3 id="prepare"><a href="#prepare" class="header-anchor">#</a> prepare()</h3> <p>After the loader resolved the list of configuration classes for your handler, the prepare() method is called once.
+In this example, we use the method as a hook to create our configurator instance.</p> <div class="language-php extra-class"><pre class="language-php"><code><span class="token php language-php"><span class="token delimiter important">&lt;?</span>php<span class="token comment">/** @noinspection ALL */</span>
+<span class="token keyword">namespace</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Handlers</span><span class="token punctuation">;</span>
+
+<span class="token keyword">use</span> <span class="token package">Neunerlei<span class="token punctuation">\</span>Configuration<span class="token punctuation">\</span>Handler<span class="token punctuation">\</span>AbstractConfigHandler</span><span class="token punctuation">;</span>
+<span class="token keyword">use</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Handlers<span class="token punctuation">\</span>ConfigureTestConfigurator</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name-definition class-name">ConfigureTestHandler</span> <span class="token keyword">extends</span> <span class="token class-name">AbstractConfigHandler</span><span class="token punctuation">{</span>
+
+    <span class="token keyword">protected</span> <span class="token variable">$configurator</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">function</span> <span class="token function-definition function">prepare</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">:</span> <span class="token keyword return-type">void</span> <span class="token punctuation">{</span>
+        <span class="token comment">// Note how we create the configurator instance using the built-in getInstance() method.</span>
+        <span class="token comment">// it will automatically try to create the instance using the (optional) PSR container implementation</span>
+        <span class="token comment">// or create the instance itself if no container was given</span>
+        <span class="token variable">$this</span><span class="token operator">-&gt;</span><span class="token property">configurator</span> <span class="token operator">=</span> <span class="token variable">$this</span><span class="token operator">-&gt;</span><span class="token function">getInstance</span><span class="token punctuation">(</span><span class="token class-name static-context">ConfigureTestConfigurator</span><span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// ... other methods</span>
+<span class="token punctuation">}</span>
+</span></code></pre></div><h3 id="handle-string-class"><a href="#handle-string-class" class="header-anchor">#</a> handle(string $class)</h3> <p>The handle method will be called once for every configuration class, and will receive the name
+of that class as a parameter. Your handler can decide freely what it does with the name of the class.
+In our example, where we defined the &quot;configure()&quot; method as static in our configurable interface,
+its job is fairly simple: execute the static method and pass it the configurator object.</p> <div class="language-php extra-class"><pre class="language-php"><code><span class="token php language-php"><span class="token delimiter important">&lt;?</span>php<span class="token comment">/** @noinspection ALL */</span>
+<span class="token keyword">namespace</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Handlers</span><span class="token punctuation">;</span>
+
+<span class="token keyword">use</span> <span class="token package">Neunerlei<span class="token punctuation">\</span>Configuration<span class="token punctuation">\</span>Handler<span class="token punctuation">\</span>AbstractConfigHandler</span><span class="token punctuation">;</span>
+<span class="token keyword">use</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Handlers<span class="token punctuation">\</span>ConfigureTestConfigurator</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name-definition class-name">ConfigureTestHandler</span> <span class="token keyword">extends</span> <span class="token class-name">AbstractConfigHandler</span><span class="token punctuation">{</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">function</span> <span class="token function-definition function">handle</span><span class="token punctuation">(</span><span class="token keyword type-hint">string</span> <span class="token variable">$class</span><span class="token punctuation">)</span> <span class="token punctuation">:</span> <span class="token keyword return-type">void</span> <span class="token punctuation">{</span>
+         <span class="token function">call_user_func</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token variable">$class</span><span class="token punctuation">,</span> <span class="token string single-quoted-string">'configure'</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token variable">$this</span><span class="token operator">-&gt;</span><span class="token property">configurator</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// ... other methods</span>
+<span class="token punctuation">}</span>
+</span></code></pre></div><h3 id="finish"><a href="#finish" class="header-anchor">#</a> finish()</h3> <p>After all configuration classes have been processed in the handle() method the finish() method is called once.
+Here, the handler can apply post-processing, emit events or whatever you need to do.
+In our example what we want is to inherit the information from the configurator and store it in the state
+object.</p> <div class="language-php extra-class"><pre class="language-php"><code><span class="token php language-php"><span class="token delimiter important">&lt;?</span>php<span class="token comment">/** @noinspection ALL */</span>
+<span class="token keyword">namespace</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Handlers</span><span class="token punctuation">;</span>
+
+<span class="token keyword">use</span> <span class="token package">Neunerlei<span class="token punctuation">\</span>Configuration<span class="token punctuation">\</span>Handler<span class="token punctuation">\</span>AbstractConfigHandler</span><span class="token punctuation">;</span>
+<span class="token keyword">use</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Handlers<span class="token punctuation">\</span>ConfigureTestConfigurator</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name-definition class-name">ConfigureTestHandler</span> <span class="token keyword">extends</span> <span class="token class-name">AbstractConfigHandler</span><span class="token punctuation">{</span>
+
+    <span class="token keyword">public</span> <span class="token keyword">function</span> <span class="token function-definition function">finish</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">:</span> <span class="token keyword return-type">void</span> <span class="token punctuation">{</span>
+        <span class="token comment">// We retrieve the state object from the context and pass it to the configurator's finish method.</span>
+        <span class="token comment">// The configurator itself will then store the collected information on the state</span>
+        <span class="token variable">$this</span><span class="token operator">-&gt;</span><span class="token property">configurator</span><span class="token operator">-&gt;</span><span class="token function">finish</span><span class="token punctuation">(</span><span class="token variable">$this</span><span class="token operator">-&gt;</span><span class="token property">context</span><span class="token operator">-&gt;</span><span class="token function">getState</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// ... other methods</span>
+<span class="token punctuation">}</span>
+</span></code></pre></div><h2 id="writing-a-configuration-class"><a href="#writing-a-configuration-class" class="header-anchor">#</a> Writing a configuration class</h2> <p>Now, after all that setup, let's create a configuration and see how it works.
+If we look back at the directory structure in the &quot;Root locations&quot; section we see,
+that there are multiple directories called &quot;Config&quot;. Inside our handler class implementation we told the
+config finder, that it should look inside the &quot;Config&quot; directory of all root locations in order to resolve
+potential target classes.</p> <p>So, we start by creating a new class at /src/Plugins/Plugin1/Config:</p> <div class="language-php extra-class"><pre class="language-php"><code><span class="token php language-php"><span class="token delimiter important">&lt;?php</span>
+<span class="token keyword">namespace</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Config</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name-definition class-name">PluginTestConfig</span> <span class="token punctuation">{</span><span class="token punctuation">}</span>
+</span></code></pre></div><p>In order to register the class as configuration we have to implement the configuration interface.</p> <div class="custom-block tip"><p class="custom-block-title">TIP</p> <p>If you follow the naming suggestion, by beginning your configurable interface with &quot;Configure...&quot;,
+you will be able to see a list of all configurable interfaces when you start typing: <code>...Config implements Configure|</code>.</p></div> <div class="language-php extra-class"><pre class="language-php"><code><span class="token php language-php"><span class="token delimiter important">&lt;?php</span>
+<span class="token keyword">namespace</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Config</span><span class="token punctuation">;</span>
+
+<span class="token keyword">use</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Handlers<span class="token punctuation">\</span>ConfigureTestInterface</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name-definition class-name">PluginTestConfig</span> <span class="token keyword">implements</span> <span class="token class-name">ConfigureTestInterface</span><span class="token punctuation">{</span><span class="token punctuation">}</span>
+</span></code></pre></div><div class="custom-block tip"><p class="custom-block-title">TIP</p> <p>If you are using PHPStorm you can now right-click on the interface, select &quot;Show Context Actions&quot; and &quot;Add method stubs&quot;
+to create the method required by the contract.</p></div> <div class="language-php extra-class"><pre class="language-php"><code><span class="token php language-php"><span class="token delimiter important">&lt;?php</span>
+<span class="token keyword">namespace</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Config</span><span class="token punctuation">;</span>
+
+<span class="token keyword">use</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Handlers<span class="token punctuation">\</span>ConfigureTestInterface</span><span class="token punctuation">;</span>
+<span class="token keyword">use</span> <span class="token package">Example<span class="token punctuation">\</span>Plugins<span class="token punctuation">\</span>Plugin1<span class="token punctuation">\</span>Handlers<span class="token punctuation">\</span>ConfigureTestConfigurator</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name-definition class-name">PluginTestConfig</span> <span class="token keyword">implements</span> <span class="token class-name">ConfigureTestInterface</span><span class="token punctuation">{</span>
+    <span class="token comment">/**
+     * Configures some part of your application
+     */</span>
+    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">function</span> <span class="token function-definition function">configure</span><span class="token punctuation">(</span><span class="token class-name type-declaration">ConfigureTestConfigurator</span> <span class="token variable">$configurator</span><span class="token punctuation">)</span><span class="token punctuation">:</span> <span class="token keyword return-type">void</span> <span class="token punctuation">{</span>
+
+        <span class="token comment">// Use the configurator to fill the registered property</span>
+        <span class="token variable">$configurator</span><span class="token operator">-&gt;</span><span class="token function">setMyOption</span><span class="token punctuation">(</span><span class="token string single-quoted-string">'plugin option'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span>
+</span></code></pre></div><p>Now, back in our example above, here you should now see an output of <code>['myOption' =&gt; 'plugin option']</code>
+after you let your code run again.</p> <p>Pretty neat, but a lot of code to write a single entry in an array. So, why would I ever do it like this?
+I'm glad you asked, so with the basic principles out of the way, take a look at some nifty stuff like:</p> <ul><li><a href="/guide/ConfigState.html">Config State</a></li> <li>Inheritance and overrides</li> <li>Handler overrides and config extension</li> <li>Config modifiers</li> <li>Dependency injection</li> <li>Caching and runtime handling</li> <li>Namespacing</li> <li>Events</li> <li>Loader extensions</li></ul></div> <footer class="page-edit"><!----> <!----></footer> <div class="page-nav"><p class="inner"><span class="prev">
+      ←
+      <a href="/" class="prev router-link-active">
+        Configuration - a different approach
+      </a></span> <span class="next"><a href="/guide/ConfigState.html">
+        Config State
+      </a>
+      →
+    </span></p></div> </main></div><div class="global-ui"></div></div>
+    <script src="/assets/js/app.2fe2820e.js" defer></script><script src="/assets/js/2.7a33be8c.js" defer></script><script src="/assets/js/9.ef748947.js" defer></script>
+  </body>
+</html>
