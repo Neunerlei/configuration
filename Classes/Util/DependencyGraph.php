@@ -63,7 +63,7 @@ class DependencyGraph
             return $this->dependencies[$key];
         }
 
-        $dependencies = [];
+        $dependencies = [[], []];
 
         foreach ($this->order[$key] ?? [] as $depKey) {
             if (in_array($depKey, $path, true)) {
