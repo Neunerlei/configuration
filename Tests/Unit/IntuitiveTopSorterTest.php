@@ -23,12 +23,13 @@ declare(strict_types=1);
 namespace Neunerlei\ConfigTests\Unit;
 
 
+use Neunerlei\Configuration\Exception\CyclicDependencyException;
 use Neunerlei\Configuration\Util\IntuitiveTopSorter;
 use PHPUnit\Framework\TestCase;
 
 class IntuitiveTopSorterTest extends TestCase
 {
-    
+
     public function provideTestSortingData(): array
     {
         return [
@@ -117,7 +118,7 @@ class IntuitiveTopSorterTest extends TestCase
                     $sorter->moveItemBefore('e', 'c');
                     $sorter->moveItemAfter('c', 'f');
                 },
-                ['b', 'd', 'f', 'e', 'a', 'c', 'g'],
+                ['b', 'e', 'f', 'c', 'd', 'a', 'g'],
             ],
             [
                 11,
@@ -128,12 +129,83 @@ class IntuitiveTopSorterTest extends TestCase
                     $sorter->moveItemAfter('c', 'f');
                     $sorter->moveItemAfter('b', 'g');
                 },
-                ['d', 'f', 'e', 'a', 'c', 'g', 'b'],
+                ['e', 'f', 'c', 'd', 'a', 'g', 'b'],
+            ],
+            [
+                12,
+                ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+                function (IntuitiveTopSorter $sorter) {
+                    $sorter->moveItemBefore('a', 'e');
+                    $sorter->moveItemBefore('b', 'e');
+                    $sorter->moveItemBefore('c', 'e');
+                    $sorter->moveItemBefore('f', 'b');
+                    $sorter->moveItemBefore('g', 'f');
+                },
+                ['a', 'g', 'f', 'b', 'c', 'd', 'e'],
+            ],
+            [
+                13,
+                [
+                    'core',
+                    'api',
+                    'imaging',
+                    'routing',
+                    'shib',
+                    'be',
+                    'element',
+                    'module',
+                    'fe',
+                    'link',
+                    'pid',
+                    'pidSite',
+                    'raw',
+                    'routingSite',
+                    'ct',
+                    'tca',
+                    'ts',
+                    'preparse',
+                ],
+                function (IntuitiveTopSorter $sorter) {
+                    $sorter->moveItemBefore('shib', 'element');
+                    $sorter->moveItemAfter('element', 'tca');
+                    $sorter->moveItemBefore('element', 'ts');
+                    $sorter->moveItemBefore('module', 'ts');
+                    $sorter->moveItemBefore('fe', 'ts');
+                    $sorter->moveItemAfter('link', 'ts');
+                    $sorter->moveItemAfter('link', 'pid');
+                    $sorter->moveItemBefore('pid', 'ts');
+                    $sorter->moveItemAfter('pidSite', 'pid');
+                    $sorter->moveItemAfter('routingSite', 'routing');
+                    $sorter->moveItemAfter('routingSite', 'pidSite');
+                    $sorter->moveItemAfter('ct', 'tca');
+                    $sorter->moveItemAfter('tca', 'core');
+                    $sorter->moveItemAfter('preparse', 'ts');
+                },
+                [
+                    'core',
+                    'api',
+                    'imaging',
+                    'routing',
+                    'shib',
+                    'be',
+                    'tca',
+                    'element',
+                    'module',
+                    'fe',
+                    'pid',
+                    'pidSite',
+                    'raw',
+                    'routingSite',
+                    'ct',
+                    'ts',
+                    'link',
+                    'preparse',
+                ],
             ],
         ];
-        
+
     }
-    
+
     /**
      * @param   int       $i
      * @param   array     $list
@@ -148,5 +220,17 @@ class IntuitiveTopSorterTest extends TestCase
         $sorter       = new IntuitiveTopSorter($list);
         $modifier($sorter);
         $this->assertEquals($expect, $sorter->sort(), $i . ' failed');
+    }
+
+    public function testCyclicDependencyException(): void
+    {
+        $this->expectException(CyclicDependencyException::class);
+        $this->expectExceptionMessage('Found a cyclic dependency in: b -> c -> a -> b');
+
+        (new IntuitiveTopSorter(['a', 'b', 'c']))
+            ->moveItemAfter('a', 'b')
+            ->moveItemAfter('b', 'c')
+            ->moveItemAfter('c', 'a')
+            ->sort();
     }
 }

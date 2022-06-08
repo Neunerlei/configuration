@@ -23,8 +23,6 @@ declare(strict_types=1);
 namespace Neunerlei\Configuration\Util;
 
 
-use MJS\TopSort\Implementations\FixedArraySort;
-
 /**
  * Class IntuitiveTopSorter
  *
@@ -44,7 +42,7 @@ class IntuitiveTopSorter
      * @var array
      */
     protected $list = [];
-    
+
     /**
      * The list of order instructions to apply
      * It is a list of keys and the dependencies of the key
@@ -52,21 +50,22 @@ class IntuitiveTopSorter
      * @var array
      */
     protected $order = [];
-    
+
     /**
      * A list of all items that should move
      *
      * @var array
+     * @deprecated will be removed without replacement in the next major release
      */
     protected $movingItems = [];
-    
+
     /**
      * The list of items the $movingItems should be moved to
      *
      * @var array
      */
     protected $pivotItems = [];
-    
+
     /**
      * IntuitiveTopSorter constructor.
      *
@@ -76,7 +75,7 @@ class IntuitiveTopSorter
     {
         $this->list = $list;
     }
-    
+
     /**
      * Adds a new instruction to move the $item AFTER the $pivotItem without moving the $pivotItem itself.
      *
@@ -91,15 +90,15 @@ class IntuitiveTopSorter
         if (! in_array($item, $this->list, true) || ! in_array($pivotItem, $this->list, true)) {
             return $this;
         }
-        
+
         // Store the instruction
         $this->pivotItems[]   = $pivotItem;
         $this->movingItems[]  = $item;
         $this->order[$item][] = $pivotItem;
-        
+
         return $this;
     }
-    
+
     /**
      * Adds a new instruction to move the $item BEFORE the $pivotItem without moving the $pivotItem itself.
      *
@@ -114,15 +113,15 @@ class IntuitiveTopSorter
         if (! in_array($item, $this->list, true) || ! in_array($pivotItem, $this->list, true)) {
             return $this;
         }
-        
+
         // Store the instruction
         $this->pivotItems[]        = $pivotItem;
         $this->movingItems[]       = $item;
         $this->order[$pivotItem][] = $item;
-        
+
         return $this;
     }
-    
+
     /**
      * Applies the registered instructions to the list of items and returns the resulting list
      *
@@ -130,99 +129,59 @@ class IntuitiveTopSorter
      * based on the given sort order, to avoid counter-intuitive sorting results.
      *
      * @return array
+     *
+     * @note This implementation is heavily inspired by Oleksiy Gapotchenko's work
+     * on stable topological sort algorithms.
+     * @see  https://blog.gapotchenko.com/stable-topological-sort
      */
     public function sort(): array
     {
         if (empty($this->order)) {
             return $this->list;
         }
-        
+
         // Prepare the order list
         $order = array_fill_keys($this->list, []);
         $order = array_merge($order, $this->order);
-        
-        // Iterate all items in the order
-        $lastItem = null;
-        foreach ($order as $item => $deps) {
-            // Ignore items that are actively moved
-            if (in_array($item, $this->movingItems, true)) {
-                // Except they are pivots as well -> dangling item
-                if (in_array($item, $this->pivotItems, true)) {
-                    // Iterate the registered order and merge in additional dependencies #10 + #11
-                    foreach ($this->order as $_item => $_deps) {
-                        if (! in_array($item, $_deps, true)) {
-                            continue;
-                        }
-                        $order[$item] = array_unique(
-                            array_merge(
-                                $order[$item],
-                                array_diff($_deps, [$item])
-                            ));
+
+        $graph = new DependencyGraph($order);
+
+        $sorted = $this->list;
+        $length = count($this->list);
+
+        for ($h = 0; $h < $length; $h++) {
+            for ($i = 0; $i < $length; $i++) {
+                for ($j = 0; $j < $i; $j++) {
+                    if (! $graph->doesAHaveDirectDependencyOnB($sorted[$j], $sorted[$i])) {
+                        continue;
                     }
+
+                    $jOnI = $graph->doesAHaveTransitiveDependencyOnB($sorted[$j], $sorted[$i]);
+                    $iOnJ = $graph->doesAHaveTransitiveDependencyOnB($sorted[$i], $sorted[$j]);
+
+                    // If both are true, we have a circular dependency
+                    if ($jOnI && $iOnJ) {
+                        continue;
+                    }
+
+                    if (in_array($sorted[$j], $this->pivotItems, true)) {
+                        $_j = $j;
+                        $j  = $i;
+                        $i  = $_j;
+                        unset($_j);
+                    }
+
+                    $move = $sorted[$j];
+                    unset($sorted[$j]);
+
+                    array_splice($sorted, $i, 0, $move);
+                    continue 3;
                 }
-                continue;
             }
-            
-            // Inject the last item if we have it
-            if ($lastItem !== null) {
-                $order[$item][] = $lastItem;
-            }
-            
-            // Store this item as last item
-            $lastItem = $item;
+
+            break;
         }
-        
-        /**
-         * Helper to traverse the list of dependencies recursively.
-         *
-         * @param   array     $dependencies  Will contain the list of all dependencies we found
-         * @param   array     $deps          A list of direct dependencies for a single item
-         * @param   callable  $traverser     The self reference for the recursion
-         */
-        $traverser = static function (array &$dependencies, array $deps, callable $traverser) use ($order): void {
-            foreach ($deps as $dep) {
-                if (in_array($dep, $dependencies, true)) {
-                    continue;
-                }
-                $dependencies[] = $dep;
-                $traverser($dependencies, $order[$dep], $traverser);
-            }
-        };
-        
-        // Traverse the order and generate the recursive map
-        $orderRecursive = array_fill_keys($this->list, []);
-        foreach ($order as $item => $deps) {
-            $traverser($orderRecursive[$item], $deps, $traverser);
-        }
-        $order = $orderRecursive;
-        unset($orderRecursive);
-        
-        // Iterate all statics (not actively moved elements) and find a list of items which NOT
-        // actively depend on them. Therefor we can implicitly use them as dependencies.
-        $statics = array_diff($this->list, $this->movingItems);
-        foreach ($statics as $staticItem) {
-            // Find all items which DON't depend on the current $staticItem
-            $nonDependentItems = [];
-            foreach ($order as $item => $deps) {
-                if ($item === $staticItem || in_array($staticItem, $deps, true)) {
-                    continue;
-                }
-                if (array_search($item, $this->list, true) > array_search($staticItem, $this->list, true)) {
-                    continue;
-                }
-                $nonDependentItems[] = $item;
-            }
-            
-            // Skip if we only have items with dependencies
-            if (empty($nonDependentItems)) {
-                continue;
-            }
-            
-            // Inject all non-dependent items into the order
-            $order[$staticItem] = array_unique(array_merge($order[$staticItem], $nonDependentItems));
-        }
-        
-        // Sort the list
-        return (new FixedArraySort($order))->doSort()->toArray();
+
+        return $sorted;
     }
 }
