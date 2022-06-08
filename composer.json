@@ -42,7 +42,7 @@
             "Neunerlei\\ConfigTests\\": "Tests"
         }
     },
-    "version": "2.8.1",
+    "version": "2.8.2",
     "config": {
         "platform": {
             "php": "7.3"

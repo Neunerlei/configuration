@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.8.2](https://github.com/Neunerlei/configuration/compare/v2.8.1...v2.8.2) (2022-06-08)
+
+
+### Bug Fixes
+
+* **DependencyGraph:** fix issues with php 7.3 ([fdf2b5f](https://github.com/Neunerlei/configuration/commit/fdf2b5f090d7ecf8ac212ccc64fa055f82c9e30c))
+* **IntuitiveTopSorter:** rework the top sorter logic to be more resilient ([c971a7e](https://github.com/Neunerlei/configuration/commit/c971a7ef7149cf26da25dbc1793fa442482d1e62))
+
 ### [2.8.1](https://github.com/Neunerlei/configuration/compare/v2.8.0...v2.8.1) (2022-04-08)
 
 
